@@ -1,0 +1,21 @@
+# Never copy host build artifacts into the image. In particular, the host's
+# node_modules contains macOS-native binaries that break the Linux build.
+node_modules
+.next
+dist
+*.tsbuildinfo
+
+# VCS + local tooling
+.git
+.gitignore
+.claude
+
+# Secrets / local env (runtime env comes from Cloud Run --set-env-vars)
+.env
+.env.local
+.env.development
+.env.*.local
+
+# Docs / misc not needed in the image
+.DS_Store
+npm-debug.log*

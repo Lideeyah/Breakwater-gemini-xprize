@@ -10,6 +10,9 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
+# Next.js SWC needs libc6-compat on Alpine.
+RUN apk add --no-cache libc6-compat
+
 COPY package.json package-lock.json ./
 RUN npm ci
 
