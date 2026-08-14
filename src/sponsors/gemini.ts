@@ -51,6 +51,14 @@ const MODEL_NAME = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 // the slower, smarter second opinion.
 const GEMINI_TIMEOUT_MS = parseInt(process.env.GEMINI_TIMEOUT_MS || "12000", 10);
 
+// Only the most recent steps are sent to Gemini. A loop shows up in the last few
+// actions, and a bounded prompt keeps latency low even when a runaway agent's
+// history has grown huge.
+const MAX_TRAJECTORY_MESSAGES = parseInt(
+  process.env.GEMINI_MAX_TRAJECTORY_MESSAGES || "12",
+  10,
+);
+
 const SYSTEM_PROMPT = `You are Breakwater, a real-time security circuit breaker sitting in front of autonomous AI agents. You receive an agent's recent execution trajectory (its message history plus the tool call it is about to make) and must decide whether to ALLOW or BLOCK the next action.
 
 BLOCK the agent when you detect any of:
@@ -146,7 +154,14 @@ export class GeminiEvaluator {
       };
     }
 
-    const transcript = history
+    // Send only a recent window of the trajectory. A loop is visible in the last
+    // handful of steps, and a small prompt keeps latency (and cost) low — the
+    // full history can grow unbounded on a runaway agent, which is the slow case.
+    const trimmed =
+      history.length > MAX_TRAJECTORY_MESSAGES
+        ? [history[0], ...history.slice(-(MAX_TRAJECTORY_MESSAGES - 1))]
+        : history;
+    const transcript = trimmed
       .map((m) => `[${m.role}] ${m.content}`)
       .join("\n");
 
@@ -160,51 +175,74 @@ export class GeminiEvaluator {
         : "") +
       `\nShould Breakwater ALLOW or BLOCK this next action?`;
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
+    // Up to two attempts: a transient blip (5xx / parse hiccup) shouldn't drop
+    // the verdict to the heuristic and steal the Gemini moment. We do NOT retry
+    // on timeout — that already spent the full budget.
+    let lastErr: unknown;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
+      try {
+        const result = await GeminiEvaluator.model.generateContent(
+          { contents: [{ role: "user", parts: [{ text: prompt }] }] },
+          { signal: controller.signal } as never,
+        );
+        clearTimeout(timeout);
 
+        const parsed = JSON.parse(result.response.text()) as {
+          approved: boolean;
+          riskScore: number;
+          reason: string;
+          categories?: string[];
+        };
+
+        // Models sometimes return riskScore on a 0-100 scale despite the prompt;
+        // normalise anything > 1 back into 0..1.
+        const rawRisk = Number(parsed.riskScore) || 0;
+        const riskScore = Math.max(
+          0,
+          Math.min(1, rawRisk > 1 ? rawRisk / 100 : rawRisk),
+        );
+
+        return {
+          approved: Boolean(parsed.approved),
+          riskScore,
+          reason: parsed.reason || "No reason returned",
+          evaluationLatencyMs: Math.round(performance.now() - start),
+          evaluator: MODEL_NAME,
+          categories: Array.isArray(parsed.categories) ? parsed.categories : [],
+        };
+      } catch (err) {
+        clearTimeout(timeout);
+        lastErr = err;
+        // Don't retry a timeout — it already consumed the full budget.
+        if (err instanceof Error && err.name === "AbortError") break;
+      }
+    }
+
+    const isTimeout = lastErr instanceof Error && lastErr.name === "AbortError";
+    return {
+      approved: true, // fail open — let the deterministic engine decide
+      riskScore: 0,
+      reason: isTimeout
+        ? `Gemini evaluation timed out (${GEMINI_TIMEOUT_MS}ms) — heuristic engine only`
+        : `Gemini evaluation error: ${lastErr instanceof Error ? lastErr.message : "unknown"}`,
+      evaluationLatencyMs: Math.round(performance.now() - start),
+      evaluator: "unavailable",
+      categories: [],
+    };
+  }
+
+  /**
+   * Fire a tiny throwaway call to warm the model + TLS connection so the first
+   * real demo evaluation isn't a cold ~10s. Safe to ignore failures.
+   */
+  static async warmUp(): Promise<void> {
+    if (!GeminiEvaluator.model) return;
     try {
-      const result = await GeminiEvaluator.model.generateContent(
-        {
-          contents: [{ role: "user", parts: [{ text: prompt }] }],
-        },
-        { signal: controller.signal } as never,
-      );
-      clearTimeout(timeout);
-
-      const parsed = JSON.parse(result.response.text()) as {
-        approved: boolean;
-        riskScore: number;
-        reason: string;
-        categories?: string[];
-      };
-
-      // Models sometimes return riskScore on a 0-100 scale despite the prompt;
-      // normalise anything > 1 back into 0..1.
-      const rawRisk = Number(parsed.riskScore) || 0;
-      const riskScore = Math.max(0, Math.min(1, rawRisk > 1 ? rawRisk / 100 : rawRisk));
-
-      return {
-        approved: Boolean(parsed.approved),
-        riskScore,
-        reason: parsed.reason || "No reason returned",
-        evaluationLatencyMs: Math.round(performance.now() - start),
-        evaluator: MODEL_NAME,
-        categories: Array.isArray(parsed.categories) ? parsed.categories : [],
-      };
-    } catch (err) {
-      clearTimeout(timeout);
-      const isTimeout = err instanceof Error && err.name === "AbortError";
-      return {
-        approved: true, // fail open — let the deterministic engine decide
-        riskScore: 0,
-        reason: isTimeout
-          ? `Gemini evaluation timed out (${GEMINI_TIMEOUT_MS}ms) — heuristic engine only`
-          : `Gemini evaluation error: ${err instanceof Error ? err.message : "unknown"}`,
-        evaluationLatencyMs: Math.round(performance.now() - start),
-        evaluator: "unavailable",
-        categories: [],
-      };
+      await GeminiEvaluator.model.generateContent("ping");
+    } catch {
+      /* warm-up is best-effort */
     }
   }
 }

@@ -137,6 +137,8 @@ async function main(): Promise<void> {
   await server.register(websocket);
 
   GeminiEvaluator.initialize();
+  // Warm the model + connection so the first live evaluation isn't a cold start.
+  void GeminiEvaluator.warmUp();
 
   // -------------------------------------------------------------------------
   // WebSocket fan-out to dashboards
