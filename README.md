@@ -103,17 +103,21 @@ would burn ~$X over the next hour."* Tune `AGENT_TARGET_MODEL` and
 
 ## Deploy to Cloud Run
 
+One container, one public HTTPS URL — the proxy fronts the dashboard, its
+same-origin WebSocket, and the agent API:
+
 ```bash
-gcloud builds submit --tag gcr.io/YOUR_PROJECT/breakwater
 gcloud run deploy breakwater \
-  --image gcr.io/YOUR_PROJECT/breakwater \
-  --port 3000 \
-  --set-env-vars "GEMINI_API_KEY=your_key" \
-  --allow-unauthenticated
+  --source . \
+  --region us-central1 \
+  --allow-unauthenticated \
+  --port 8080 \
+  --min-instances 1 --max-instances 1 \
+  --set-env-vars GEMINI_API_KEY=your_key,GEMINI_MODEL=gemini-2.5-flash
 ```
 
-The multi-stage `Dockerfile` compiles the proxy and builds the dashboard, then
-runs both (proxy on 3001, dashboard on 3000).
+Full step-by-step walkthrough (setup, verification, troubleshooting, submission
+checklist): see **[DEPLOY.md](DEPLOY.md)**.
 
 ## License
 
