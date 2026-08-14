@@ -14,7 +14,9 @@ WORKDIR /app
 RUN apk add --no-cache libc6-compat
 
 COPY package.json package-lock.json ./
-RUN npm ci
+# npm install (not ci): npm ci hard-fails on cross-platform lockfile quirks with
+# native-fallback packages (@emnapi/*) when building Linux from a macOS lockfile.
+RUN npm install --no-audit --no-fund
 
 COPY . .
 
