@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  --font-geist: "Geist", system-ui, sans-serif;
+  --font-jetbrains: "JetBrains Mono", monospace;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+}
+
+body {
+  background: #020617;
+  color: #e2e8f0;
+  font-family: var(--font-geist);
+  font-feature-settings: "ss01", "cv01";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Selection */
+::selection {
+  background: rgba(124, 139, 161, 0.3);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #020617;
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 5px;
+}
+
+/* Tremor dark-theme overrides */
+.dark [class*="tremor"] text,
+.dark [class*="recharts"] text {
+  fill: #94a3b8 !important;
+}
+.dark [class*="tremor"] line,
+.dark [class*="recharts"] line.recharts-cartesian-axis-line,
+.dark [class*="recharts"] line.recharts-cartesian-grid-horizontal {
+  stroke: #1e293b !important;
+}
+.dark .recharts-cartesian-axis-tick-value {
+  fill: #64748b !important;
+  font-family: var(--font-jetbrains) !important;
+  font-size: 11px !important;
+}
+.dark .recharts-tooltip-wrapper .recharts-default-tooltip {
+  background-color: #0f172a !important;
+  border-color: #1e293b !important;
+}
+.dark .recharts-tooltip-item {
+  color: #e2e8f0 !important;
+}
+
+/* Brewing utility classes */
+@layer utilities {
+  .font-operational {
+    font-family: var(--font-jetbrains);
+    letter-spacing: -0.025em;
+    font-weight: 500;
+    line-height: 1.35;
+  }
+  .text-headline {
+    font-family: var(--font-geist);
+    letter-spacing: -0.02em;
+    line-height: 0.98;
+    font-weight: 700;
+  }
+}
+
+/* Brewing motion — disabled under prefers-reduced-motion */
+@keyframes node-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+@keyframes reveal-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.node-pulse {
+  animation: node-pulse 3.2s ease-in-out infinite;
+}
+
+.reveal-in {
+  animation: reveal-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .node-pulse,
+  .reveal-in {
+    animation: none;
+  }
+}
