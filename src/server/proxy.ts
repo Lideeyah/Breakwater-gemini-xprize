@@ -6,7 +6,7 @@
  * where Breakwater:
  *
  *   1. runs a zero-latency deterministic policy engine (loop / rate / budget),
- *   2. asks Google Gemini 1.5 Flash to semantically judge the trajectory,
+ *   2. asks Google Gemini Flash to semantically judge the trajectory,
  *   3. BLOCKS (HTTP 429, connection terminated) or FORWARDS the action,
  *   4. broadcasts the decision live to every dashboard over WebSocket.
  *
@@ -29,6 +29,14 @@ import {
 import { estimateMessagesTokens } from "../utils/tokenCounter.js";
 import { estimateCost } from "../utils/costEstimator.js";
 import { logger } from "../utils/logger.js";
+
+// Load .env for local dev so GEMINI_API_KEY reaches the proxy. On Cloud Run the
+// file is absent (env vars are injected via --set-env-vars), so this no-ops.
+try {
+  process.loadEnvFile();
+} catch {
+  /* no .env file present — rely on the real environment */
+}
 
 // ---------------------------------------------------------------------------
 // Configuration
@@ -55,7 +63,7 @@ const CONTEXT_TOKEN_CEILING = parseInt(
   10,
 );
 // Decision-latency SLA. The deterministic guards (loop / budget / context)
-// decide in well under this; Gemini 1.5 Flash adds semantic depth on the
+// decide in well under this; Gemini Flash adds semantic depth on the
 // requests the guards let through.
 const DECISION_SLA_MS = parseInt(process.env.DECISION_SLA_MS || "80", 10);
 
@@ -321,27 +329,27 @@ async function main(): Promise<void> {
           );
         }
 
-        // ---- TIER 2: Gemini 1.5 Flash — semantic inspection ----
+        // ---- TIER 2: Gemini Flash — semantic inspection ----
         // Only runs on traffic Tier 1 let through. This is where Gemini earns
         // its place: reworded retries and semantic drift that defeat hashing.
         const gemini = await GeminiEvaluator.evaluateAgentTrajectory(
           history,
           currentCall,
         );
-        const geminiLive = gemini.evaluator === "gemini-1.5-flash";
+        const geminiLive = gemini.evaluator !== "unavailable";
 
         if (geminiLive && !gemini.approved) {
           return tripBreaker(
             gemini.reason,
             gemini.riskScore,
-            "gemini-1.5-flash",
+            gemini.evaluator,
             gemini.evaluationLatencyMs,
           );
         }
 
         // APPROVED → actually forward the tool call to the real upstream API.
         const latencyMs = geminiLive ? gemini.evaluationLatencyMs : heuristicMs;
-        const evaluator = geminiLive ? "gemini-1.5-flash" : "deterministic-tier1";
+        const evaluator = geminiLive ? gemini.evaluator : "deterministic-tier1";
         const reason = geminiLive
           ? `Gemini approved: ${gemini.reason}`
           : "Approved by Tier 1 deterministic guards";
@@ -412,6 +420,7 @@ async function main(): Promise<void> {
   server.get("/health", async () => ({
     status: "ok",
     geminiLive: GeminiEvaluator.isLive,
+    geminiModel: GeminiEvaluator.modelName,
     clients: clients.size,
     uptime: process.uptime(),
   }));
@@ -449,7 +458,7 @@ async function main(): Promise<void> {
     });
     console.log(
       `\n  🌊 Breakwater proxy listening on http://localhost:${PORT}` +
-        `\n     Gemini 1.5 Flash: ${
+        `\n     Gemini (${GeminiEvaluator.modelName}): ${
           GeminiEvaluator.isLive ? "LIVE ✅" : "offline (heuristic breaker only) ⚠️"
         }` +
         `\n     Dashboard WS:     ws://localhost:${PORT}/ws\n`,
