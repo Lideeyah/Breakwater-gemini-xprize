@@ -64,7 +64,7 @@ export default function DashboardPage() {
   const latencyLabel =
     stats.lastLatencyMs != null ? `${stats.lastLatencyMs}ms` : "—";
   const evaluatorLabel = stats.geminiLive
-    ? "Gemini 1.5 Flash"
+    ? "Gemini Flash"
     : "Heuristic engine";
 
   return (
@@ -133,7 +133,7 @@ export default function DashboardPage() {
           <PitchBadge
             label="Evaluation Latency"
             value={latencyLabel}
-            sub={stats.geminiLive ? "Gemini 1.5 Flash" : "heuristic"}
+            sub={stats.geminiLive ? "Gemini Flash" : "heuristic"}
             tone="neutral"
           />
           <PitchBadge

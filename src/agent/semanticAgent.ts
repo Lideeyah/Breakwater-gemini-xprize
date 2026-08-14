@@ -9,7 +9,7 @@
  * byte-different, so the deterministic exact-hash check never matches.
  *
  * That is the whole point: semantic drift / reworded retries are INVISIBLE to a
- * HashMap. Only Tier 2 — Gemini 1.5 Flash reading the underlying INTENT of the
+ * HashMap. Only Tier 2 — Gemini Flash reading the underlying INTENT of the
  * trajectory — can see that the agent is looping and trip the breaker.
  *
  * Run it:  npm run agent:semantic   (requires GEMINI_API_KEY for the live catch)
@@ -124,7 +124,7 @@ async function main(): Promise<void> {
     ),
   );
   console.log(
-    c.dim("         never matches. Only Gemini 1.5 Flash (Tier 2) can catch this."),
+    c.dim("         never matches. Only Gemini (Tier 2) can catch this."),
   );
   console.log();
 
@@ -205,7 +205,7 @@ async function main(): Promise<void> {
         console.log(
           c.bold(
             c.magenta(
-              "  🧠 Caught by Gemini 1.5 Flash — semantic intent, not a string match.",
+              "  🧠 Caught by Gemini Flash — semantic intent, not a string match.",
             ),
           ),
         );
@@ -253,7 +253,7 @@ async function main(): Promise<void> {
   console.log(
     c.bold(
       c.yellow(
-        "  → Export GEMINI_API_KEY and re-run: Tier 2 (Gemini 1.5 Flash) catches it in ~3 iterations.",
+        "  → Export GEMINI_API_KEY and re-run: Tier 2 (Gemini Flash) catches it in ~3 iterations.",
       ),
     ),
   );
