@@ -93,7 +93,7 @@ const RATIONALES = [
 ];
 
 /** Build a reworded-but-equivalent tool call for iteration i. */
-function driftingCall(i: number, lastResult: string) {
+function driftingCall(i: number) {
   const tool = TOOL_SYNONYMS[i % TOOL_SYNONYMS.length];
   const query = QUERY_PHRASINGS[i % QUERY_PHRASINGS.length];
   const rationale = RATIONALES[i % RATIONALES.length];
@@ -136,7 +136,7 @@ async function main(): Promise<void> {
   let lastResult = "";
 
   for (let i = 1; i <= MAX_ITERATIONS; i++) {
-    const call = driftingCall(i, lastResult);
+    const call = driftingCall(i);
 
     history.push({
       role: "assistant",
