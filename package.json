@@ -1,0 +1,45 @@
+{
+  "name": "breakwater-scaffold",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -n proxy,web -c cyan,green \"npm:dev:proxy\" \"npm:dev:web\"",
+    "dev:proxy": "tsx watch src/server/proxy.ts",
+    "dev:web": "next dev",
+    "agent": "tsx src/agent/realAgent.ts",
+    "agent:semantic": "tsx src/agent/semanticAgent.ts",
+    "build": "next build",
+    "build:server": "tsc -p tsconfig.server.json",
+    "start": "next start",
+    "start:proxy": "node dist/server/proxy.js",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.3.0",
+    "@fastify/websocket": "^11.3.0",
+    "@google/generative-ai": "^0.24.1",
+    "@headlessui/react": "^2.2.10",
+    "@headlessui/tailwindcss": "^0.2.2",
+    "@tremor/react": "^3.18.7",
+    "fastify": "^5.10.0",
+    "lucide-react": "^1.27.0",
+    "next": "14.2.35",
+    "react": "^18",
+    "react-dom": "^18",
+    "tailwindcss": "^3.4.1",
+    "ws": "^8.21.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "@types/ws": "^8.18.1",
+    "concurrently": "^10.0.4",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.35",
+    "postcss": "^8",
+    "tsx": "^4.23.1",
+    "typescript": "^5",
+    "vitest": "^4.1.10"
+  }
+}

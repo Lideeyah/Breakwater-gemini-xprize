@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "noEmit": false,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext"
+  },
+  "include": [
+    "src/server/**/*",
+    "src/agent/**/*",
+    "src/policy/**/*",
+    "src/sponsors/**/*",
+    "src/utils/**/*"
+  ],
+  "exclude": ["src/app/**/*"]
+}
