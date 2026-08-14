@@ -3,7 +3,7 @@
  *
  * This is the file hackathon judges should read to review our Google AI
  * integration. It wraps `@google/generative-ai` and exposes a single
- * primitive: `evaluateAgentTrajectory`, which asks Gemini 1.5 Flash to judge
+ * primitive: `evaluateAgentTrajectory`, which asks Gemini Flash to judge
  * whether an autonomous agent's execution trajectory should be allowed to
  * proceed or should be tripped by the circuit breaker.
  *
@@ -37,12 +37,19 @@ export interface TrajectoryEvaluation {
   riskScore: number; // 0.0 – 1.0
   reason: string;
   evaluationLatencyMs: number;
-  /** Which evaluator produced this verdict. */
-  evaluator: "gemini-1.5-flash" | "unavailable";
+  /** Which evaluator produced this verdict: the model name, or "unavailable". */
+  evaluator: string;
   categories: string[];
 }
 
-const MODEL_NAME = "gemini-1.5-flash";
+// Gemini Flash model. 1.5 Flash was retired by Google, so we default to the
+// current stable Flash. Override with GEMINI_MODEL (e.g. gemini-3.5-flash).
+const MODEL_NAME = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+
+// Gemini's deep semantic check is allowed a few seconds (real Flash latency is
+// ~2-5s). The sub-80ms guarantee is served by the deterministic tier; Gemini is
+// the slower, smarter second opinion.
+const GEMINI_TIMEOUT_MS = parseInt(process.env.GEMINI_TIMEOUT_MS || "12000", 10);
 
 const SYSTEM_PROMPT = `You are Breakwater, a real-time security circuit breaker sitting in front of autonomous AI agents. You receive an agent's recent execution trajectory (its message history plus the tool call it is about to make) and must decide whether to ALLOW or BLOCK the next action.
 
@@ -110,8 +117,13 @@ export class GeminiEvaluator {
     return GeminiEvaluator.model !== null;
   }
 
+  /** The Gemini model in use (for banners, health, and telemetry labels). */
+  static get modelName(): string {
+    return MODEL_NAME;
+  }
+
   /**
-   * Ask Gemini 1.5 Flash to evaluate the agent trajectory.
+   * Ask Gemini Flash to evaluate the agent trajectory.
    *
    * Never throws: on missing key, timeout, or API error it returns an
    * `evaluator: "unavailable"` result with approved=true so the caller's
@@ -149,7 +161,7 @@ export class GeminiEvaluator {
       `\nShould Breakwater ALLOW or BLOCK this next action?`;
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 4000);
+    const timeout = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
 
     try {
       const result = await GeminiEvaluator.model.generateContent(
@@ -167,12 +179,17 @@ export class GeminiEvaluator {
         categories?: string[];
       };
 
+      // Models sometimes return riskScore on a 0-100 scale despite the prompt;
+      // normalise anything > 1 back into 0..1.
+      const rawRisk = Number(parsed.riskScore) || 0;
+      const riskScore = Math.max(0, Math.min(1, rawRisk > 1 ? rawRisk / 100 : rawRisk));
+
       return {
         approved: Boolean(parsed.approved),
-        riskScore: Math.max(0, Math.min(1, Number(parsed.riskScore) || 0)),
+        riskScore,
         reason: parsed.reason || "No reason returned",
         evaluationLatencyMs: Math.round(performance.now() - start),
-        evaluator: "gemini-1.5-flash",
+        evaluator: MODEL_NAME,
         categories: Array.isArray(parsed.categories) ? parsed.categories : [],
       };
     } catch (err) {
@@ -182,7 +199,7 @@ export class GeminiEvaluator {
         approved: true, // fail open — let the deterministic engine decide
         riskScore: 0,
         reason: isTimeout
-          ? "Gemini evaluation timed out (4000ms) — heuristic engine only"
+          ? `Gemini evaluation timed out (${GEMINI_TIMEOUT_MS}ms) — heuristic engine only`
           : `Gemini evaluation error: ${err instanceof Error ? err.message : "unknown"}`,
         evaluationLatencyMs: Math.round(performance.now() - start),
         evaluator: "unavailable",

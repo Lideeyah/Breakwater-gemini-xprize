@@ -19,6 +19,8 @@ const PRICING: Record<string, ModelPricing> = {
   "claude-3-haiku": { inputPer1k: 0.00025, outputPer1k: 0.00125 },
   "gemini-1.5-flash": { inputPer1k: 0.000075, outputPer1k: 0.0003 },
   "gemini-1.5-pro": { inputPer1k: 0.00125, outputPer1k: 0.005 },
+  "gemini-2.5-flash": { inputPer1k: 0.0003, outputPer1k: 0.0025 },
+  "gemini-2.5-pro": { inputPer1k: 0.00125, outputPer1k: 0.01 },
 };
 
 const DEFAULT_PRICING: ModelPricing = { inputPer1k: 0.002, outputPer1k: 0.006 };
