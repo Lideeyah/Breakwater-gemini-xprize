@@ -17,6 +17,7 @@
 import Fastify, { FastifyReply, FastifyRequest } from "fastify";
 import cors from "@fastify/cors";
 import websocket from "@fastify/websocket";
+import httpProxy from "@fastify/http-proxy";
 import type { WebSocket } from "ws";
 
 import { PolicyEngine } from "../policy/engine.js";
@@ -57,6 +58,16 @@ const CONTEXT_TOKEN_CEILING = parseInt(
 // decide in well under this; Gemini 1.5 Flash adds semantic depth on the
 // requests the guards let through.
 const DECISION_SLA_MS = parseInt(process.env.DECISION_SLA_MS || "80", 10);
+
+// Single-origin mode (for Cloud Run, where only ONE port is exposed). When
+// enabled, Fastify also fronts the Next.js dashboard running internally, so the
+// dashboard, its same-origin WebSocket (/ws) and the agent API all live behind
+// one HTTPS URL. Off by default so local dev keeps proxy(:3001) + web(:3000).
+const SERVE_DASHBOARD = process.env.SERVE_DASHBOARD === "1";
+const NEXT_INTERNAL_PORT = parseInt(
+  process.env.NEXT_INTERNAL_PORT || "3000",
+  10,
+);
 
 // ---------------------------------------------------------------------------
 // Wire event shape broadcast to dashboards
@@ -109,7 +120,12 @@ const lastRequestTs = new Map<string, number>();
 async function main(): Promise<void> {
   const server = Fastify({ logger: false, requestTimeout: 30_000 });
 
-  await server.register(cors, { origin: true });
+  // In single-origin mode everything is same-origin, so CORS is unnecessary —
+  // and skipping it avoids its wildcard OPTIONS route colliding with the
+  // http-proxy catch-all below. In two-origin dev we keep permissive CORS.
+  if (!SERVE_DASHBOARD) {
+    await server.register(cors, { origin: true });
+  }
   await server.register(websocket);
 
   GeminiEvaluator.initialize();
@@ -405,6 +421,21 @@ async function main(): Promise<void> {
     ...PolicyEngine.getMetrics(),
     geminiLive: GeminiEvaluator.isLive,
   }));
+
+  // -------------------------------------------------------------------------
+  // Single-origin front door (Cloud Run). Registered LAST so every API/WS
+  // route above wins; anything else (dashboard HTML, /_next/* assets) is
+  // proxied to the internal Next.js server. /ws stays local — do NOT proxy it.
+  // -------------------------------------------------------------------------
+  if (SERVE_DASHBOARD) {
+    await server.register(httpProxy, {
+      upstream: `http://127.0.0.1:${NEXT_INTERNAL_PORT}`,
+      websocket: false, // our own /ws handler owns the upgrade
+    });
+    logger.info("breakwater:serving-dashboard", {
+      upstream: `http://127.0.0.1:${NEXT_INTERNAL_PORT}`,
+    });
+  }
 
   // -------------------------------------------------------------------------
   // Start

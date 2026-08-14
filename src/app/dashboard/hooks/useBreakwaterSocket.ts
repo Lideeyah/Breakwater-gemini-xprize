@@ -71,16 +71,29 @@ function defaultStats(): DashboardStats {
 }
 
 function resolveWsUrl(): string {
+  // 1. Explicit override always wins (e.g. dashboard and proxy on separate hosts).
   const explicit = process.env.NEXT_PUBLIC_PROXY_WS_URL;
   if (explicit) return explicit;
-  const port = process.env.NEXT_PUBLIC_PROXY_PORT || "3001";
+
   const proto =
     typeof window !== "undefined" && window.location.protocol === "https:"
       ? "wss:"
       : "ws:";
   const host =
     typeof window !== "undefined" ? window.location.hostname : "localhost";
-  return `${proto}//${host}:${port}/ws`;
+
+  // 2. Dev override: proxy on a different port than the page (local `npm run dev`
+  //    serves the dashboard on :3000 and the proxy on :3001).
+  const devPort = process.env.NEXT_PUBLIC_PROXY_PORT;
+  if (devPort) return `${proto}//${host}:${devPort}/ws`;
+
+  // 3. Default: SAME ORIGIN as the page. Behind one Cloud Run URL the proxy
+  //    fronts the dashboard, so /ws is reachable at the page's own host:port.
+  const port =
+    typeof window !== "undefined" && window.location.port
+      ? `:${window.location.port}`
+      : "";
+  return `${proto}//${host}${port}/ws`;
 }
 
 export function useBreakwaterSocket(): UseSocketReturn {

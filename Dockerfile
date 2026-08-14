@@ -1,6 +1,8 @@
 # syntax=docker/dockerfile:1
-# Multi-stage build: compiles the Fastify reverse proxy AND the Next.js
-# dashboard, then runs both in one container (suitable for Google Cloud Run).
+# Single-origin container for Google Cloud Run. The Fastify reverse proxy is the
+# front door on $PORT: it serves the agent API + WebSocket telemetry directly and
+# proxies everything else to an internal Next.js dashboard. One HTTPS URL, one
+# port — exactly what Cloud Run exposes.
 
 # ---------------------------------------------------------------------------
 # Stage 1 — build
@@ -32,10 +34,13 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/next.config.mjs ./
 
-ENV PROXY_PORT=3001
-ENV PORT=3000
+# Single-origin mode: Fastify fronts the internal Next server on 3000.
+ENV SERVE_DASHBOARD=1
+ENV NEXT_INTERNAL_PORT=3000
+# GEMINI_API_KEY is provided at deploy time (gcloud run deploy --set-env-vars).
+# Cloud Run injects $PORT (defaults to 8080); the proxy binds it as the front door.
+EXPOSE 8080
 
-# Cloud Run routes to $PORT (3000, the dashboard). The proxy runs alongside on
-# 3001. Start both; if the proxy exits, the container exits.
-EXPOSE 3000 3001
-CMD ["sh", "-c", "node dist/server/proxy.js & npx next start -p 3000"]
+# Start the internal Next dashboard, give it a moment, then run the proxy in the
+# foreground so the container's lifecycle follows the front door.
+CMD ["sh", "-c", "npx next start -p ${NEXT_INTERNAL_PORT:-3000} & sleep 3 && node dist/server/proxy.js"]

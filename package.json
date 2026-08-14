@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@fastify/cors": "^11.3.0",
+    "@fastify/http-proxy": "^11.6.0",
     "@fastify/websocket": "^11.3.0",
     "@google/generative-ai": "^0.24.1",
     "@headlessui/react": "^2.2.10",
