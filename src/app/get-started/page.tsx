@@ -129,7 +129,7 @@ const client = new OpenAI({
             />
             <span className="text-headline text-xl">BREAKWATER</span>
           </Link>
-          <div className="flex items-center gap-2 text-[12px] font-operational text-muted">
+          <div className="hidden sm:flex items-center gap-2 text-[12px] font-operational text-muted">
             <StepDot active={step >= 1} label="Workspace" />
             <span className="text-border-strong">→</span>
             <StepDot active={step >= 2} label="Connect" />
@@ -137,52 +137,52 @@ const client = new OpenAI({
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-5 py-14">
+      <main className="px-5">
         {step === 1 && (
-          <div>
-            <h1 className="text-headline text-3xl sm:text-4xl">
-              Create your workspace.
-            </h1>
-            <p className="mt-3 text-[15px] text-secondary leading-relaxed">
-              This is where your agents, activity, and billing live. Start free -
-              no card required.
-            </p>
-            <form onSubmit={handleCreate} className="mt-9 space-y-5 max-w-md">
-              <Field label="Workspace name" htmlFor="ws">
-                <input
-                  id="ws"
-                  value={wsName}
-                  onChange={(e) => setWsName(e.target.value)}
-                  placeholder="Acme AI"
-                  autoComplete="organization"
-                  required
-                  className="w-full bg-background border border-border rounded-md px-3 py-2.5 text-[14px] text-foreground placeholder:text-muted outline-none focus-visible:ring-2 focus-visible:ring-border-strong focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                />
-              </Field>
-              <Field label="Work email" htmlFor="email">
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@acme.ai"
-                  autoComplete="email"
-                  required
-                  className="w-full bg-background border border-border rounded-md px-3 py-2.5 text-[14px] text-foreground placeholder:text-muted outline-none focus-visible:ring-2 focus-visible:ring-border-strong focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                />
-              </Field>
-              <button
-                type="submit"
-                className="rounded-md bg-accent/20 border border-border-strong px-5 py-2.5 text-[14px] font-operational text-foreground transition-colors duration-100 hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-strong focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-              >
-                Create workspace →
-              </button>
-            </form>
+          <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center py-10">
+            <div className="w-full max-w-md rounded-lg border border-border bg-surface p-8">
+              <h1 className="text-headline text-2xl">Create your workspace.</h1>
+              <p className="mt-2 text-[14px] text-secondary leading-relaxed">
+                This is where your agents, activity, and billing live. Start free
+                - no card required.
+              </p>
+              <form onSubmit={handleCreate} className="mt-6 space-y-4">
+                <Field label="Workspace name" htmlFor="ws">
+                  <input
+                    id="ws"
+                    value={wsName}
+                    onChange={(e) => setWsName(e.target.value)}
+                    placeholder="Acme AI"
+                    autoComplete="organization"
+                    required
+                    className="w-full bg-background border border-border rounded-md px-3 py-2.5 text-[14px] text-foreground placeholder:text-muted outline-none focus-visible:ring-2 focus-visible:ring-border-strong focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                  />
+                </Field>
+                <Field label="Work email" htmlFor="email">
+                  <input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@acme.ai"
+                    autoComplete="email"
+                    required
+                    className="w-full bg-background border border-border rounded-md px-3 py-2.5 text-[14px] text-foreground placeholder:text-muted outline-none focus-visible:ring-2 focus-visible:ring-border-strong focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                  />
+                </Field>
+                <button
+                  type="submit"
+                  className="w-full rounded-md bg-accent/20 border border-border-strong px-5 py-2.5 text-[14px] font-operational text-foreground transition-colors duration-100 hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-strong focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                >
+                  Create workspace →
+                </button>
+              </form>
+            </div>
           </div>
         )}
 
         {step === 2 && (
-          <div>
+          <div className="max-w-xl mx-auto py-14">
             <h1 className="text-headline text-3xl sm:text-4xl">
               Connect your first agent.
             </h1>
