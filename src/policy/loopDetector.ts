@@ -56,7 +56,7 @@ export class LoopDetector {
     const roles = messages.map((m) => m.role ?? 'unknown').join(',');
     // Bucket content lengths into 200-char bands so minor wording
     // changes don't change the hash, but vastly different messages do.
-    // 200 chars ≈ 50 tokens — wide enough to avoid false positives
+    // 200 chars ≈ 50 tokens - wide enough to avoid false positives
     // on varied normal requests
     const lengthBuckets = messages
       .map((m) => Math.floor((m.content ?? '').length / 200))
@@ -148,7 +148,7 @@ export class LoopDetector {
       return { detected: false, confidence: 0, loopType: 'none', matchCount: 0 };
     }
 
-    // Rule 1: Exact content match — 3+ identical contentHash in window
+    // Rule 1: Exact content match - 3+ identical contentHash in window
     const contentHashCounts = new Map<string, number>();
     for (const fp of window) {
       contentHashCounts.set(fp.contentHash, (contentHashCounts.get(fp.contentHash) ?? 0) + 1);
@@ -159,7 +159,7 @@ export class LoopDetector {
       }
     }
 
-    // Rule 2: Structural match — 3+ identical structuralHash with different content
+    // Rule 2: Structural match - 3+ identical structuralHash with different content
     const structuralGroups = new Map<string, Set<string>>();
     for (const fp of window) {
       let contentSet = structuralGroups.get(fp.structuralHash);
@@ -192,7 +192,7 @@ export class LoopDetector {
       }
     }
 
-    // Rule 3: Oscillation — ABAB or ABCABC pattern in contentHash sequence
+    // Rule 3: Oscillation - ABAB or ABCABC pattern in contentHash sequence
     const hashSequence = window.map((fp) => fp.contentHash);
     if (this.detectOscillation(hashSequence)) {
       return { detected: true, confidence: 0.85, loopType: 'oscillation', matchCount: 0 };

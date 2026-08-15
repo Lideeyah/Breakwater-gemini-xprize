@@ -2,7 +2,7 @@
 
 export default function AlertBanner({
   active,
-  message = "ACTIVE INTERCEPT — Runaway agent loop detected",
+  message = "ACTIVE INTERCEPT - Runaway agent loop detected",
 }: {
   active: boolean;
   message?: string;

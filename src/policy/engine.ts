@@ -47,7 +47,7 @@ const DEFAULT_CONFIG: PolicyConfig = {
 };
 
 /**
- * Breakwater Policy Engine — deterministic rule-based evaluation layer.
+ * Breakwater Policy Engine - deterministic rule-based evaluation layer.
  *
  * Runs rate limiting, loop detection, budget enforcement, and reentrancy
  * checks in sequence BEFORE any AI-based evaluation. If ANY check fails

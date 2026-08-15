@@ -82,7 +82,7 @@ export default function TryItPanel() {
     const content = "Fetch the latest sales report and retry until it works.";
     push({
       kind: "note",
-      text: "Simulating a runaway agent — the same request, over and over…",
+      text: "Simulating a runaway agent - the same request, over and over…",
     });
     for (let i = 1; i <= 4; i++) {
       try {
@@ -90,8 +90,8 @@ export default function TryItPanel() {
         push({
           kind: r.blocked ? "blocked" : "reply",
           text: r.blocked
-            ? `Attempt ${i} — halted: ${r.text}`
-            : `Attempt ${i} — forwarded: ${r.text.slice(0, 70)}…`,
+            ? `Attempt ${i} - halted: ${r.text}`
+            : `Attempt ${i} - forwarded: ${r.text.slice(0, 70)}…`,
         });
         if (r.blocked) break;
       } catch {
@@ -119,7 +119,7 @@ export default function TryItPanel() {
       >
         {log.length === 0 && (
           <p className="text-[13px] text-muted font-operational leading-relaxed">
-            Send a message and get a real Gemini reply through Breakwater — or
+            Send a message and get a real Gemini reply through Breakwater - or
             simulate a runaway agent and watch the breaker trip. Every call shows
             up in the live feed below.
           </p>

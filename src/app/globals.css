@@ -76,7 +76,7 @@ body {
   }
 }
 
-/* Brewing motion — disabled under prefers-reduced-motion */
+/* Brewing motion - disabled under prefers-reduced-motion */
 @keyframes node-pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }

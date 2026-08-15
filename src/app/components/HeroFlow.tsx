@@ -116,7 +116,7 @@ export default function HeroFlow() {
           />
         ))}
 
-        {/* Runaway loop — caught at the gate */}
+        {/* Runaway loop - caught at the gate */}
         {RED.map((d, i) => (
           <circle
             key={i}

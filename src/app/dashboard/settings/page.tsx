@@ -57,7 +57,7 @@ export default function SettingsPage() {
               </button>
             </div>
           </div>
-          <Row label="Email" value={workspace.email || "—"} />
+          <Row label="Email" value={workspace.email || "-"} />
           <Row label="Plan" value={`${plan.name} · $${plan.price}/mo`} />
         </div>
       </section>

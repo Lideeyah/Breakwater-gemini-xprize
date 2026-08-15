@@ -17,7 +17,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Breakwater — AI Agent Circuit Breaker",
+  title: "Breakwater - AI Agent Circuit Breaker",
   description:
     "Real-time circuit breaker proxy for AI agents. Monitor, intercept, and halt runaway agent loops before they burn tokens and dollars.",
 };

@@ -1,5 +1,5 @@
 /**
- * Breakwater Reverse Proxy — the real circuit breaker.
+ * Breakwater Reverse Proxy - the real circuit breaker.
  *
  * A Fastify HTTP + WebSocket server that sits between an autonomous AI agent
  * and the outside world. Every agent action is POSTed to /v1/agent/execute,
@@ -36,7 +36,7 @@ import { logger } from "../utils/logger.js";
 try {
   process.loadEnvFile();
 } catch {
-  /* no .env file present — rely on the real environment */
+  /* no .env file present - rely on the real environment */
 }
 
 // ---------------------------------------------------------------------------
@@ -44,11 +44,11 @@ try {
 // ---------------------------------------------------------------------------
 const PORT = parseInt(process.env.PROXY_PORT || process.env.PORT || "3001", 10);
 // The model the runaway agent would be burning on every loop iteration.
-// gpt-4 is the pessimistic (expensive) case — used for honest cost projection.
+// gpt-4 is the pessimistic (expensive) case - used for honest cost projection.
 const AGENT_TARGET_MODEL = process.env.AGENT_TARGET_MODEL || "gpt-4";
 // Horizon for the "dollars saved" projection: how long an unattended runaway
 // would keep looping before a human noticed. Clearly a projection, not a
-// realized charge — surfaced as such in the dashboard + README.
+// realized charge - surfaced as such in the dashboard + README.
 const RUNAWAY_HORIZON_MINUTES = parseFloat(
   process.env.RUNAWAY_HORIZON_MINUTES || "60",
 );
@@ -87,12 +87,12 @@ const NEXT_INTERNAL_PORT = parseInt(
 const UPSTREAM_LLM_URL =
   process.env.UPSTREAM_LLM_URL ||
   "https://generativelanguage.googleapis.com/v1beta/openai";
-// Used only when the caller doesn't send their own Authorization header — lets
+// Used only when the caller doesn't send their own Authorization header - lets
 // the hosted demo forward to the upstream with the server's own key.
 const UPSTREAM_API_KEY =
   process.env.UPSTREAM_API_KEY || process.env.GEMINI_API_KEY || "";
 // Run Gemini semantic checks on the passthrough hot path too. Turn off
-// (PASSTHROUGH_SEMANTIC=0) for latency-sensitive production — the deterministic
+// (PASSTHROUGH_SEMANTIC=0) for latency-sensitive production - the deterministic
 // tier still protects every call.
 const PASSTHROUGH_SEMANTIC = process.env.PASSTHROUGH_SEMANTIC !== "0";
 
@@ -140,14 +140,14 @@ const totals = {
   dollarsSaved: 0,
 };
 
-// Per-agent timestamp of the previous request — used to measure the real
+// Per-agent timestamp of the previous request - used to measure the real
 // observed call cadence for the runaway projection.
 const lastRequestTs = new Map<string, number>();
 
 async function main(): Promise<void> {
   const server = Fastify({ logger: false, requestTimeout: 30_000 });
 
-  // In single-origin mode everything is same-origin, so CORS is unnecessary —
+  // In single-origin mode everything is same-origin, so CORS is unnecessary -
   // and skipping it avoids its wildcard OPTIONS route colliding with the
   // http-proxy catch-all below. In two-origin dev we keep permissive CORS.
   if (!SERVE_DASHBOARD) {
@@ -206,7 +206,7 @@ async function main(): Promise<void> {
 
   // -------------------------------------------------------------------------
   // The failing "external weather API" the agent's tool actually calls.
-  // Real HTTP 500 over the network — no mock.
+  // Real HTTP 500 over the network - no mock.
   // -------------------------------------------------------------------------
   server.get("/upstream/weather", async (_req, reply) => {
     return reply.code(500).send({
@@ -320,14 +320,14 @@ async function main(): Promise<void> {
       };
 
       try {
-        // (0) Context-degradation guard — deterministic, sub-millisecond.
+        // (0) Context-degradation guard - deterministic, sub-millisecond.
         // Stop the agent BEFORE its payload hits the model's 128k wall.
         const t0 = performance.now();
         if (tokensThisCall >= CONTEXT_TOKEN_CEILING) {
           const guardMs = Math.max(1, Math.round(performance.now() - t0));
           return tripBreaker(
             `Context window near limit: ${tokensThisCall.toLocaleString()}/` +
-              `${MODEL_CONTEXT_LIMIT.toLocaleString()} tokens — halted before ` +
+              `${MODEL_CONTEXT_LIMIT.toLocaleString()} tokens - halted before ` +
               `downstream truncation/crash`,
             1,
             "context-guard",
@@ -335,7 +335,7 @@ async function main(): Promise<void> {
           );
         }
 
-        // ---- TIER 1: Deterministic engine — loop / rate / budget, sub-ms ----
+        // ---- TIER 1: Deterministic engine - loop / rate / budget, sub-ms ----
         // Catches identical/structural retries for ~$0. If it trips we STOP
         // here and never spend a Gemini call on an obvious loop.
         const heuristic = PolicyEngine.evaluate(policyPayload);
@@ -350,7 +350,7 @@ async function main(): Promise<void> {
           );
         }
 
-        // ---- TIER 2: Gemini Flash — semantic inspection ----
+        // ---- TIER 2: Gemini Flash - semantic inspection ----
         // Only runs on traffic Tier 1 let through. This is where Gemini earns
         // its place: reworded retries and semantic drift that defeat hashing.
         const gemini = await GeminiEvaluator.evaluateAgentTrajectory(
@@ -436,7 +436,7 @@ async function main(): Promise<void> {
   );
 
   // -------------------------------------------------------------------------
-  // Real OpenAI-compatible passthrough — protect ANY agent with one URL swap.
+  // Real OpenAI-compatible passthrough - protect ANY agent with one URL swap.
   // Point your client's base URL at .../v1 and every chat completion is checked,
   // then forwarded to the real LLM. Send `x-agent-id` to key loop detection.
   // -------------------------------------------------------------------------
@@ -529,7 +529,7 @@ async function main(): Promise<void> {
         if (tokensThisCall >= CONTEXT_TOKEN_CEILING) {
           return emitBlock(
             `Context window near limit: ${tokensThisCall.toLocaleString()}/` +
-              `${MODEL_CONTEXT_LIMIT.toLocaleString()} tokens — halted before ` +
+              `${MODEL_CONTEXT_LIMIT.toLocaleString()} tokens - halted before ` +
               `downstream truncation/crash`,
             1,
             "context-guard",
@@ -553,8 +553,8 @@ async function main(): Promise<void> {
         let riskScore = 0;
         let latencyMs = heuristicMs;
         if (PASSTHROUGH_SEMANTIC) {
-          // Frame the pending action as what it really is — generating a reply
-          // to the latest user turn — so Gemini judges the conversation for a
+          // Frame the pending action as what it really is - generating a reply
+          // to the latest user turn - so Gemini judges the conversation for a
           // loop, not a bogus "empty tool call" (which it flags as pointless).
           const lastUser = [...normMessages]
             .reverse()
@@ -633,7 +633,7 @@ async function main(): Promise<void> {
           },
         });
 
-        // Stream passthrough (stream:true) — pipe the upstream SSE straight back.
+        // Stream passthrough (stream:true) - pipe the upstream SSE straight back.
         if (body.stream && upstreamRes.body) {
           reply.hijack();
           reply.raw.writeHead(upstreamRes.status, {
@@ -678,7 +678,7 @@ async function main(): Promise<void> {
   // -------------------------------------------------------------------------
   // Single-origin front door (Cloud Run). Registered LAST so every API/WS
   // route above wins; anything else (dashboard HTML, /_next/* assets) is
-  // proxied to the internal Next.js server. /ws stays local — do NOT proxy it.
+  // proxied to the internal Next.js server. /ws stays local - do NOT proxy it.
   // -------------------------------------------------------------------------
   if (SERVE_DASHBOARD) {
     await server.register(httpProxy, {

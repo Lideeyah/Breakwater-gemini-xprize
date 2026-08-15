@@ -90,7 +90,7 @@ export default function InterceptFeed({ events }: { events: SSEEvent[] }) {
               </span>
             )}
             <span className="text-[11px] text-muted truncate flex-1">
-              {event.data.reason ?? "—"}
+              {event.data.reason ?? "-"}
             </span>
             {event.data.riskScore != null && (
               <div className="flex items-center gap-1.5 min-w-[80px]">

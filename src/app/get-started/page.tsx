@@ -144,7 +144,7 @@ const client = new OpenAI({
               Create your workspace.
             </h1>
             <p className="mt-3 text-[15px] text-secondary leading-relaxed">
-              This is where your agents, activity, and billing live. Start free —
+              This is where your agents, activity, and billing live. Start free -
               no card required.
             </p>
             <form onSubmit={handleCreate} className="mt-9 space-y-5 max-w-md">
@@ -187,7 +187,7 @@ const client = new OpenAI({
               Connect your first agent.
             </h1>
             <p className="mt-3 text-[15px] text-secondary leading-relaxed">
-              Point your agent at Breakwater. Keep your own model and key — this
+              Point your agent at Breakwater. Keep your own model and key - this
               is the entire integration.
             </p>
 
@@ -244,7 +244,7 @@ const client = new OpenAI({
                   </button>
                   {test.state === "ok" && (
                     <span className="text-[13px] font-operational text-success">
-                      ✓ Connected — {agentId} is protected
+                      ✓ Connected - {agentId} is protected
                     </span>
                   )}
                 </div>

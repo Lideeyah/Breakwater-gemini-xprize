@@ -79,7 +79,7 @@ export default function Landing() {
 
       {/* Hero */}
       <section className="relative overflow-hidden">
-        {/* Ambient drifting glow — quiet, constant life behind the hero */}
+        {/* Ambient drifting glow - quiet, constant life behind the hero */}
         <div aria-hidden className="pointer-events-none absolute inset-0">
           <div
             className="bw-glow-a absolute left-1/2 top-16 h-[440px] w-[560px] -translate-x-1/2 rounded-full blur-3xl"
@@ -164,7 +164,7 @@ export default function Landing() {
           <Stat
             k="Silent"
             t="A stuck agent doesn't crash"
-            b="It just retries — the same failing call, over and over — with no error and no alert. Nobody notices until the invoice arrives."
+            b="It just retries - the same failing call, over and over - with no error and no alert. Nobody notices until the invoice arrives."
           />
           <Stat
             k="Expensive"
@@ -195,7 +195,7 @@ export default function Landing() {
           <HowCard
             n="01"
             title="Connect"
-            body="Point your agent's base URL at Breakwater and keep your own model and key. No SDK, no rewrite — one line, any framework."
+            body="Point your agent's base URL at Breakwater and keep your own model and key. No SDK, no rewrite - one line, any framework."
           />
           <HowCard
             n="02"
@@ -205,7 +205,7 @@ export default function Landing() {
           <HowCard
             n="03"
             title="Protect"
-            body="The moment an agent goes rogue, Breakwater trips the breaker — the connection is cut, the spend stops, and you see exactly why on your dashboard."
+            body="The moment an agent goes rogue, Breakwater trips the breaker - the connection is cut, the spend stops, and you see exactly why on your dashboard."
           />
         </div>
       </section>
@@ -222,8 +222,8 @@ export default function Landing() {
             </h2>
             <p className="mt-4 text-[15px] text-secondary leading-relaxed">
               Breakwater pairs sub-millisecond deterministic guards with Gemini
-              2.5 Flash so it catches what simple rules miss — reworded loops,
-              cost spirals, and prompt-injection attempts — and explains every
+              2.5 Flash so it catches what simple rules miss - reworded loops,
+              cost spirals, and prompt-injection attempts - and explains every
               decision in plain language a human can trust.
             </p>
           </div>
@@ -269,7 +269,7 @@ export default function Landing() {
             Give your agents a safety net.
           </h2>
           <p className="mt-3 text-[15px] text-secondary">
-            Connect your first agent in under a minute — free.
+            Connect your first agent in under a minute - free.
           </p>
           <Link
             href="/get-started"

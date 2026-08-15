@@ -1,16 +1,16 @@
 /**
- * semanticAgent.ts — a REAL autonomous agent that defeats string-hashing.
+ * semanticAgent.ts - a REAL autonomous agent that defeats string-hashing.
  *
  * This is the Tier-2 demo. Unlike realAgent.ts (which fires the SAME failing
  * tool call over and over, so a 1ms hash catches it), this agent REPHRASES its
  * retry every single iteration: a different tool name, different argument
- * wording, a different rationale. The intent is identical — "get the San
- * Francisco weather, the last attempt failed, try again" — but every payload is
+ * wording, a different rationale. The intent is identical - "get the San
+ * Francisco weather, the last attempt failed, try again" - but every payload is
  * byte-different, so the deterministic exact-hash check never matches.
  *
  * That is the whole point: semantic drift / reworded retries are INVISIBLE to a
- * HashMap. Only Tier 2 — Gemini Flash reading the underlying INTENT of the
- * trajectory — can see that the agent is looping and trip the breaker.
+ * HashMap. Only Tier 2 - Gemini Flash reading the underlying INTENT of the
+ * trajectory - can see that the agent is looping and trip the breaker.
  *
  * Run it:  npm run agent:semantic   (requires GEMINI_API_KEY for the live catch)
  */
@@ -57,7 +57,7 @@ interface ExecuteResponse {
 }
 
 // Same intent, endlessly reworded. Each of these is a DIFFERENT byte string, so
-// the exact-hash loop detector sees them all as "new" — yet a human (and
+// the exact-hash loop detector sees them all as "new" - yet a human (and
 // Gemini) instantly recognises they are the same failing retry.
 const TOOL_SYNONYMS = [
   "fetchExternalData",
@@ -98,7 +98,7 @@ function driftingCall(i: number) {
   const query = QUERY_PHRASINGS[i % QUERY_PHRASINGS.length];
   const rationale = RATIONALES[i % RATIONALES.length];
   // Vary the note length so even the STRUCTURAL (length-bucketed) hash is
-  // dodged for the early iterations — Gemini still gets the first catch.
+  // dodged for the early iterations - Gemini still gets the first catch.
   const note = `attempt-${i}: ${rationale}${". again".repeat(i % 5)}`;
   return {
     tool,
@@ -114,7 +114,7 @@ function driftingCall(i: number) {
 async function main(): Promise<void> {
   console.log();
   console.log(
-    c.bold(c.magenta("  🤖 Semantic-Drift Agent — reworded retries (defeats hashing)")),
+    c.bold(c.magenta("  🤖 Semantic-Drift Agent - reworded retries (defeats hashing)")),
   );
   console.log(c.dim(`  Goal:  ${GOAL}`));
   console.log(c.dim(`  Proxy: ${EXECUTE_ENDPOINT}`));
@@ -182,7 +182,7 @@ async function main(): Promise<void> {
       const viaGemini = (data.evaluator ?? "").includes("gemini");
       console.log();
       console.log(
-        c.red(c.bold("  ⛔ HTTP 429 — BREAKWATER_CIRCUIT_BREAKER_TRIPPED")),
+        c.red(c.bold("  ⛔ HTTP 429 - BREAKWATER_CIRCUIT_BREAKER_TRIPPED")),
       );
       console.log(
         (viaGemini ? c.magenta : c.red)(
@@ -205,7 +205,7 @@ async function main(): Promise<void> {
         console.log(
           c.bold(
             c.magenta(
-              "  🧠 Caught by Gemini Flash — semantic intent, not a string match.",
+              "  🧠 Caught by Gemini Flash - semantic intent, not a string match.",
             ),
           ),
         );
@@ -222,7 +222,7 @@ async function main(): Promise<void> {
     lastResult = `HTTP ${toolStatus}`;
     history.push({
       role: "tool",
-      content: `${call.tool} returned HTTP ${toolStatus} — ${JSON.stringify(
+      content: `${call.tool} returned HTTP ${toolStatus} - ${JSON.stringify(
         data.toolResult?.body ?? {},
       )}`,
     });
@@ -236,7 +236,7 @@ async function main(): Promise<void> {
     await sleep(RETRY_DELAY_MS);
   }
 
-  // Reached only if the breaker never tripped — i.e. Gemini was offline and the
+  // Reached only if the breaker never tripped - i.e. Gemini was offline and the
   // reworded retries slipped past deterministic hashing entirely. That is the
   // point of the demo: without Tier 2, semantic drift runs unchecked.
   console.log();
@@ -247,7 +247,7 @@ async function main(): Promise<void> {
   );
   console.log(
     c.yellow(
-      "  Deterministic hashing could not see the loop — the wording changed every time.",
+      "  Deterministic hashing could not see the loop - the wording changed every time.",
     ),
   );
   console.log(

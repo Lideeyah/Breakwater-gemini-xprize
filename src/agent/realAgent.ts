@@ -1,14 +1,14 @@
 /**
- * realAgent.ts — a REAL autonomous tool-calling agent (no mock).
+ * realAgent.ts - a REAL autonomous tool-calling agent (no mock).
  *
  * The agent is given a genuine goal: "get the current weather, retry until it
  * succeeds." Its only tool, `fetchExternalData`, hits an external weather API
  * that is permanently down (HTTP 500). Like a real misbehaving agent, it keeps
- * retrying the identical failing call forever — a true unbounded runaway loop.
+ * retrying the identical failing call forever - a true unbounded runaway loop.
  *
  * Every action is routed through the Breakwater proxy (/v1/agent/execute).
  * The agent has NO idea Breakwater exists until, mid-loop, the proxy trips the
- * circuit breaker and returns HTTP 429 — at which point the agent is killed.
+ * circuit breaker and returns HTTP 429 - at which point the agent is killed.
  *
  * Run it:  npm run agent     (or: npx tsx src/agent/realAgent.ts)
  */
@@ -58,7 +58,7 @@ interface ExecuteResponse {
 
 /**
  * The agent's single tool. Note: the agent does not fetch the weather API
- * directly — it asks Breakwater to execute the call, which is what puts the
+ * directly - it asks Breakwater to execute the call, which is what puts the
  * proxy in the critical path of every action.
  */
 function fetchExternalData() {
@@ -70,7 +70,7 @@ function fetchExternalData() {
 
 async function main(): Promise<void> {
   console.log();
-  console.log(c.bold(c.cyan("  🤖 Real Autonomous Agent — weather-agent-01")));
+  console.log(c.bold(c.cyan("  🤖 Real Autonomous Agent - weather-agent-01")));
   console.log(c.dim(`  Goal:  ${GOAL}`));
   console.log(c.dim(`  Proxy: ${EXECUTE_ENDPOINT}`));
   console.log(
@@ -138,7 +138,7 @@ async function main(): Promise<void> {
     if (res.status === 429) {
       console.log();
       console.log(
-        c.red(c.bold("  ⛔ HTTP 429 — BREAKWATER_CIRCUIT_BREAKER_TRIPPED")),
+        c.red(c.bold("  ⛔ HTTP 429 - BREAKWATER_CIRCUIT_BREAKER_TRIPPED")),
       );
       console.log(
         c.red(`     Evaluator: ${data.evaluator ?? "?"}  ` +
@@ -167,7 +167,7 @@ async function main(): Promise<void> {
     lastResult = `HTTP ${toolStatus}`;
     history.push({
       role: "tool",
-      content: `fetchExternalData returned HTTP ${toolStatus} — ${JSON.stringify(
+      content: `fetchExternalData returned HTTP ${toolStatus} - ${JSON.stringify(
         data.toolResult?.body ?? {},
       )}`,
     });
@@ -192,7 +192,7 @@ async function main(): Promise<void> {
   console.log();
   console.log(
     c.yellow(
-      `  Reached MAX_ITERATIONS (${MAX_ITERATIONS}) without interception — ` +
+      `  Reached MAX_ITERATIONS (${MAX_ITERATIONS}) without interception - ` +
         `check that the Breakwater proxy is running and evaluating.`,
     ),
   );

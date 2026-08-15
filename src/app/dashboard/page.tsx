@@ -18,7 +18,7 @@ export default function Overview() {
   const { events, stats, connected } = useSocket();
   const { workspace } = useWorkspace();
   const latencyLabel =
-    stats.lastLatencyMs != null ? `${stats.lastLatencyMs}ms` : "—";
+    stats.lastLatencyMs != null ? `${stats.lastLatencyMs}ms` : "-";
 
   return (
     <div className="px-5 sm:px-8 py-8 max-w-5xl">
