@@ -84,9 +84,6 @@ export default function DashboardPage() {
               <h1 className="text-headline text-2xl text-foreground">
                 BREAKWATER
               </h1>
-              <p className="text-[11px] uppercase tracking-wider font-operational text-muted mt-0.5">
-                AI Agent Circuit Breaker
-              </p>
             </div>
           </div>
 

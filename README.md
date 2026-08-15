@@ -2,7 +2,7 @@
 
 Breakwater is a **real reverse proxy circuit breaker** that sits between an
 autonomous AI agent and the outside world. It evaluates every agent action with
-**Google Gemini 1.5 Flash** (plus a zero-latency deterministic engine), and when
+**Google Gemini 2.5 Flash** (plus a zero-latency deterministic engine), and when
 it detects a runaway loop it **physically trips the breaker — HTTP 429 and the
 connection is terminated** — before more tokens and money are burned. A live
 Next.js + WebSocket dashboard shows every decision as it happens.
@@ -21,7 +21,7 @@ a failing API, and Breakwater kills it live.
   ┌──────────────────────────────────────────────┐
   │  Breakwater Reverse Proxy  (src/server/proxy.ts, :3001)
   │    1. Deterministic engine  (loop / rate / budget)  ← src/policy/*
-  │    2. Gemini 1.5 Flash semantic eval               ← src/sponsors/gemini.ts
+  │    2. Gemini 2.5 Flash semantic eval               ← src/sponsors/gemini.ts
   │    3. BLOCK → HTTP 429 + connection: close
   │       PASS  → forward the tool call to the upstream API
   │    4. broadcast decision over WebSocket
@@ -54,12 +54,50 @@ agent dies, and the dashboard flashes the intercept in real time.
 
 ### Gemini vs. the heuristic engine
 
-Gemini 1.5 Flash is the **primary** evaluator: with `GEMINI_API_KEY` set, its
+Gemini 2.5 Flash is the **primary** evaluator: with `GEMINI_API_KEY` set, its
 semantic verdict and reasoning drive the feed, and the header shows
-`GEMINI 1.5 FLASH · <live ms>`. Without a key, Breakwater **still trips loops**
+`GEMINI FLASH · <live ms>`. Without a key, Breakwater **still trips loops**
 via the deterministic engine (`src/policy/loopDetector.ts`) and the header shows
 `HEURISTIC ENGINE` — so the demo runs even offline. The proxy logs which
 evaluator made each call.
+
+## Protect your own agent (one URL swap)
+
+Breakwater exposes a real **OpenAI-compatible** endpoint, so any agent or app can
+be protected without a code rewrite — just point its base URL at Breakwater and
+add an `x-agent-id` header. Every call is checked; legitimate ones are forwarded
+to the real LLM and the real response comes back, runaway loops get HTTP 429.
+
+```bash
+curl -s https://YOUR-BREAKWATER-URL/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "x-agent-id: my-app" \
+  -d '{"model":"gemini-2.5-flash","messages":[{"role":"user","content":"Hello"}]}'
+```
+
+With the OpenAI SDK:
+
+```python
+from openai import OpenAI
+client = OpenAI(
+    base_url="https://YOUR-BREAKWATER-URL/v1",   # <-- the only change
+    api_key="YOUR_LLM_KEY",                        # your own provider key
+    default_headers={"x-agent-id": "my-app"},
+)
+client.chat.completions.create(
+    model="gemini-2.5-flash",
+    messages=[{"role": "user", "content": "Hello"}],
+)
+```
+
+- **Upstream:** defaults to Gemini's OpenAI-compatible endpoint (works with
+  `GEMINI_API_KEY` out of the box). Set `UPSTREAM_LLM_URL=https://api.openai.com/v1`
+  and send your OpenAI key to protect an OpenAI agent instead.
+- **Auth:** the caller's `Authorization` header is forwarded to the upstream and
+  never stored. If none is sent, the server falls back to `UPSTREAM_API_KEY`.
+- **Speed:** the deterministic tier guards every call in ~1 ms; Gemini adds the
+  semantic check (set `PASSTHROUGH_SEMANTIC=0` to skip it on latency-critical
+  paths).
 
 ## The "dollars saved" number
 
@@ -83,7 +121,7 @@ would burn ~$X over the next hour."* Tune `AGENT_TARGET_MODEL` and
   halting the agent *before* the downstream model truncates or crashes.
 - **Decision-latency SLA** — the deterministic guards (loop / budget / context)
   decide in **~1ms**, well inside the `DECISION_SLA_MS` (80ms) budget; each 429
-  reports `withinSla`. Gemini 1.5 Flash adds semantic judgment on the requests the
+  reports `withinSla`. Gemini 2.5 Flash adds semantic judgment on the requests the
   guards let through. Note: a real Gemini Flash round-trip is typically
   ~150–500ms — the dashboard shows the **real measured** latency, never a faked
   number, and the sub-80ms guarantee is served by the deterministic layer.

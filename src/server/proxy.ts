@@ -19,6 +19,7 @@ import cors from "@fastify/cors";
 import websocket from "@fastify/websocket";
 import httpProxy from "@fastify/http-proxy";
 import type { WebSocket } from "ws";
+import { Readable } from "node:stream";
 
 import { PolicyEngine } from "../policy/engine.js";
 import {
@@ -76,6 +77,24 @@ const NEXT_INTERNAL_PORT = parseInt(
   process.env.NEXT_INTERNAL_PORT || "3000",
   10,
 );
+
+// ---- Real passthrough (make it usable, not just a demo) --------------------
+// The OpenAI-compatible endpoint /v1/chat/completions runs the same checks and
+// then forwards APPROVED calls to a real LLM. Default upstream is Gemini's
+// OpenAI-compatible endpoint, so it works out of the box with GEMINI_API_KEY and
+// keeps everything on Gemini. Point UPSTREAM_LLM_URL at OpenAI (and send your own
+// key) to protect an OpenAI agent instead.
+const UPSTREAM_LLM_URL =
+  process.env.UPSTREAM_LLM_URL ||
+  "https://generativelanguage.googleapis.com/v1beta/openai";
+// Used only when the caller doesn't send their own Authorization header — lets
+// the hosted demo forward to the upstream with the server's own key.
+const UPSTREAM_API_KEY =
+  process.env.UPSTREAM_API_KEY || process.env.GEMINI_API_KEY || "";
+// Run Gemini semantic checks on the passthrough hot path too. Turn off
+// (PASSTHROUGH_SEMANTIC=0) for latency-sensitive production — the deterministic
+// tier still protects every call.
+const PASSTHROUGH_SEMANTIC = process.env.PASSTHROUGH_SEMANTIC !== "0";
 
 // ---------------------------------------------------------------------------
 // Wire event shape broadcast to dashboards
@@ -411,6 +430,229 @@ async function main(): Promise<void> {
         });
       } finally {
         // Always release the reentrancy lock the engine acquired.
+        PolicyEngine.releaseAgent(policyPayload);
+      }
+    },
+  );
+
+  // -------------------------------------------------------------------------
+  // Real OpenAI-compatible passthrough — protect ANY agent with one URL swap.
+  // Point your client's base URL at .../v1 and every chat completion is checked,
+  // then forwarded to the real LLM. Send `x-agent-id` to key loop detection.
+  // -------------------------------------------------------------------------
+  server.post(
+    "/v1/chat/completions",
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const body = (request.body ?? {}) as {
+        model?: string;
+        messages?: Array<{ role?: string; content?: unknown }>;
+        stream?: boolean;
+        [k: string]: unknown;
+      };
+      const agentId =
+        (request.headers["x-agent-id"] as string)?.trim() || "anonymous-agent";
+      const model = body.model || "unknown";
+      const messages = Array.isArray(body.messages) ? body.messages : [];
+      const normMessages = messages.map((m) => ({
+        role: String(m.role || "user"),
+        content:
+          typeof m.content === "string" ? m.content : JSON.stringify(m.content),
+      }));
+
+      totals.requests++;
+
+      const tokensThisCall = estimateMessagesTokens(normMessages);
+      const costThisCall = estimateCost(model, tokensThisCall);
+      const policyPayload = {
+        headers: { "x-agent-id": agentId },
+        ip: request.ip,
+        messages: normMessages,
+        estimatedTokens: tokensThisCall,
+        estimatedCostUsd: costThisCall,
+      };
+      const toolLabel = `${model} chat.completion`;
+
+      const emitBlock = (
+        reason: string,
+        riskScore: number,
+        evaluator: string,
+        latencyMs: number,
+      ) => {
+        const now = Date.now();
+        totals.intercepts++;
+        const prev = lastRequestTs.get(agentId);
+        const intervalMs = prev ? Math.max(now - prev, 1) : 1000;
+        const callsPerMinute = Math.min(60_000 / intervalMs, 600);
+        const dollarsSaved = parseFloat(
+          (costThisCall * callsPerMinute * RUNAWAY_HORIZON_MINUTES).toFixed(2),
+        );
+        totals.dollarsSaved = parseFloat(
+          (totals.dollarsSaved + dollarsSaved).toFixed(2),
+        );
+        lastRequestTs.set(agentId, now);
+        broadcast({
+          id: `${now}-${totals.requests}`,
+          type: "intercept",
+          timestamp: now,
+          data: {
+            verdict: "block",
+            reason,
+            riskScore,
+            latencyMs,
+            evaluator,
+            tokensSaved: tokensThisCall,
+            dollarsSaved,
+            agentId,
+            tool: toolLabel,
+          },
+        });
+        reply.header("connection", "close");
+        // OpenAI-shaped error so standard clients surface it cleanly.
+        return reply.code(429).send({
+          error: {
+            message: `BREAKWATER_CIRCUIT_BREAKER_TRIPPED: ${reason}`,
+            type: "breakwater_circuit_breaker",
+            code: "circuit_breaker_tripped",
+          },
+          breakwater: {
+            reason,
+            riskScore,
+            evaluator,
+            evaluationLatencyMs: latencyMs,
+            projectedDollarsSaved: dollarsSaved,
+          },
+        });
+      };
+
+      try {
+        const t0 = performance.now();
+        if (tokensThisCall >= CONTEXT_TOKEN_CEILING) {
+          return emitBlock(
+            `Context window near limit: ${tokensThisCall.toLocaleString()}/` +
+              `${MODEL_CONTEXT_LIMIT.toLocaleString()} tokens — halted before ` +
+              `downstream truncation/crash`,
+            1,
+            "context-guard",
+            Math.max(1, Math.round(performance.now() - t0)),
+          );
+        }
+
+        const heuristic = PolicyEngine.evaluate(policyPayload);
+        const heuristicMs = Math.max(1, Math.round(performance.now() - t0));
+        if (heuristic.blocked) {
+          return emitBlock(
+            heuristic.violations[0],
+            heuristic.metadata.loopConfidence || 1,
+            "deterministic-tier1",
+            heuristicMs,
+          );
+        }
+
+        let evaluator = "deterministic-tier1";
+        let reason = "Approved by Tier 1 deterministic guards";
+        let riskScore = 0;
+        let latencyMs = heuristicMs;
+        if (PASSTHROUGH_SEMANTIC) {
+          // Frame the pending action as what it really is — generating a reply
+          // to the latest user turn — so Gemini judges the conversation for a
+          // loop, not a bogus "empty tool call" (which it flags as pointless).
+          const lastUser = [...normMessages]
+            .reverse()
+            .find((m) => m.role === "user");
+          const gemini = await GeminiEvaluator.evaluateAgentTrajectory(
+            normMessages,
+            {
+              tool: toolLabel,
+              args: { request: (lastUser?.content ?? "").slice(0, 500) },
+            },
+          );
+          if (gemini.evaluator !== "unavailable") {
+            if (!gemini.approved) {
+              return emitBlock(
+                gemini.reason,
+                gemini.riskScore,
+                gemini.evaluator,
+                gemini.evaluationLatencyMs,
+              );
+            }
+            evaluator = gemini.evaluator;
+            reason = `Gemini approved: ${gemini.reason}`;
+            riskScore = gemini.riskScore;
+            latencyMs = gemini.evaluationLatencyMs;
+          }
+        }
+
+        // APPROVED → forward to the real upstream LLM and return its response.
+        const now = Date.now();
+        lastRequestTs.set(agentId, now);
+        totals.tokensProcessed += tokensThisCall;
+        PolicyEngine.recordCost(policyPayload, costThisCall);
+
+        const upstreamHeaders: Record<string, string> = {
+          "Content-Type": "application/json",
+        };
+        const callerAuth = request.headers["authorization"];
+        if (typeof callerAuth === "string" && callerAuth) {
+          upstreamHeaders["Authorization"] = callerAuth; // caller brings own key
+        } else if (UPSTREAM_API_KEY) {
+          upstreamHeaders["Authorization"] = `Bearer ${UPSTREAM_API_KEY}`;
+        }
+
+        let upstreamRes: Response;
+        try {
+          upstreamRes = await fetch(`${UPSTREAM_LLM_URL}/chat/completions`, {
+            method: "POST",
+            headers: upstreamHeaders,
+            body: JSON.stringify(body),
+          });
+        } catch (err) {
+          return reply.code(502).send({
+            error: {
+              message: `Breakwater could not reach upstream: ${
+                err instanceof Error ? err.message : "unknown"
+              }`,
+              type: "upstream_unreachable",
+            },
+          });
+        }
+
+        broadcast({
+          id: `${now}-${totals.requests}`,
+          type: "pass",
+          timestamp: now,
+          data: {
+            verdict: "pass",
+            reason,
+            riskScore,
+            latencyMs,
+            evaluator,
+            tokensProcessed: tokensThisCall,
+            agentId,
+            tool: toolLabel,
+            toolResultStatus: upstreamRes.status,
+          },
+        });
+
+        // Stream passthrough (stream:true) — pipe the upstream SSE straight back.
+        if (body.stream && upstreamRes.body) {
+          reply.hijack();
+          reply.raw.writeHead(upstreamRes.status, {
+            "Content-Type":
+              upstreamRes.headers.get("content-type") || "text/event-stream",
+            "Cache-Control": "no-cache",
+            Connection: "keep-alive",
+          });
+          Readable.fromWeb(upstreamRes.body as never).pipe(reply.raw);
+          return reply;
+        }
+
+        const text = await upstreamRes.text();
+        reply.header(
+          "content-type",
+          upstreamRes.headers.get("content-type") || "application/json",
+        );
+        return reply.code(upstreamRes.status).send(text);
+      } finally {
         PolicyEngine.releaseAgent(policyPayload);
       }
     },
