@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useWorkspace } from "../lib/workspace";
-import { useAutopilot, sleep, typeInto } from "../lib/autopilot";
 
 function apiBase(): string {
   const explicit = process.env.NEXT_PUBLIC_PROXY_HTTP_URL;
@@ -76,13 +75,12 @@ const client = new OpenAI({
     setStep(2);
   }
 
-  async function runTest(overrideId?: string): Promise<boolean> {
-    const aid = overrideId ?? agentId;
+  async function runTest() {
     setTest({ state: "running" });
     try {
       const res = await fetch(`${apiBase()}/v1/chat/completions`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-agent-id": aid },
+        headers: { "Content-Type": "application/json", "x-agent-id": agentId },
         body: JSON.stringify({
           model: "gemini-2.5-flash",
           messages: [
@@ -96,19 +94,17 @@ const client = new OpenAI({
           state: "fail",
           msg: data?.error?.message || `Connection failed (HTTP ${res.status})`,
         });
-        return false;
+        return;
       }
       setTest({
         state: "ok",
         reply: data?.choices?.[0]?.message?.content ?? "connected",
       });
-      return true;
     } catch {
       setTest({
         state: "fail",
         msg: "Couldn't reach Breakwater. Check the endpoint and that the proxy is running.",
       });
-      return false;
     }
   }
 
@@ -118,42 +114,6 @@ const client = new OpenAI({
     void res;
     router.push("/dashboard");
   }
-
-  // Autopilot: drive the real form and the real Gemini connection test.
-  const autopilot = useAutopilot();
-  const autoRan = useRef(false);
-  useEffect(() => {
-    if (!autopilot || !loaded || autoRan.current) return;
-    autoRan.current = true;
-    let cancelled = false;
-    (async () => {
-      if (!workspace) {
-        await sleep(700);
-        await typeInto(setWsName, "Northwind Labs");
-        await sleep(350);
-        await typeInto(setEmail, "ops@northwind.ai");
-        await sleep(600);
-        if (cancelled) return;
-        createWorkspace("Northwind Labs", "ops@northwind.ai");
-        setStep(2);
-      }
-      await sleep(1000);
-      if (cancelled) return;
-      setAgent("");
-      await typeInto(setAgent, "invoice-processor");
-      await sleep(500);
-      if (cancelled) return;
-      const ok = await runTest("invoice-processor");
-      await sleep(ok ? 1600 : 900);
-      if (cancelled) return;
-      addAgent("invoice-processor");
-      router.push("/dashboard?autopilot=1");
-    })();
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autopilot, loaded]);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -273,7 +233,7 @@ const client = new OpenAI({
               <Step n={3} title="Test the connection">
                 <div className="flex items-center gap-3 flex-wrap">
                   <button
-                    onClick={() => runTest()}
+                    onClick={runTest}
                     disabled={test.state === "running"}
                     aria-busy={test.state === "running"}
                     className="rounded-md bg-accent/20 border border-border-strong px-4 py-2 text-[13px] font-operational text-foreground transition-colors duration-100 hover:bg-accent/30 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-strong focus-visible:ring-offset-2 focus-visible:ring-offset-background"

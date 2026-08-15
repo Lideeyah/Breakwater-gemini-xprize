@@ -3,9 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { PLANS, type PlanId, useWorkspace } from "./lib/workspace";
-import { useAutopilot, sleep } from "./lib/autopilot";
+import { PLANS, type PlanId } from "./lib/workspace";
 import HeroFlow from "./components/HeroFlow";
 
 // Fade + rise a section into view once, as the user scrolls to it. Subtle and
@@ -73,37 +71,6 @@ function Words({
 }
 
 export default function Landing() {
-  const router = useRouter();
-  const { reset } = useWorkspace();
-  const autopilot = useAutopilot();
-  const autoRan = useRef(false);
-
-  // Autopilot: play the hero, tour the page, then walk into onboarding.
-  useEffect(() => {
-    if (!autopilot || autoRan.current) return;
-    autoRan.current = true;
-    let cancelled = false;
-    (async () => {
-      reset(); // fresh run so the full onboarding always plays
-      await sleep(4800);
-      if (cancelled) return;
-      const vh = window.innerHeight;
-      for (let k = 1; k <= 4; k++) {
-        window.scrollTo({ top: vh * 0.85 * k, behavior: "smooth" });
-        await sleep(2000);
-        if (cancelled) return;
-      }
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      await sleep(1400);
-      if (cancelled) return;
-      router.push("/get-started?autopilot=1");
-    })();
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autopilot]);
-
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Nav */}

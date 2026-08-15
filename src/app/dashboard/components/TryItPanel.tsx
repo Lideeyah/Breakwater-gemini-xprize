@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useAutopilot, sleep, typeInto } from "../../lib/autopilot";
 
 // Where the Breakwater API lives: same-origin in production (one Cloud Run URL),
 // or the proxy's dev port locally. Mirrors the WebSocket resolver.
@@ -61,8 +60,8 @@ export default function TryItPanel() {
 
   const push = (e: Entry) => setLog((l) => [...l, e]);
 
-  async function sendMessage(raw: string) {
-    const content = raw.trim();
+  async function handleSend() {
+    const content = input.trim();
     if (!content || busy) return;
     setInput("");
     push({ kind: "user", text: content });
@@ -74,10 +73,6 @@ export default function TryItPanel() {
       push({ kind: "blocked", text: "Could not reach Breakwater." });
     }
     setBusy(false);
-  }
-
-  function handleSend() {
-    sendMessage(input);
   }
 
   async function handleRunaway() {
@@ -106,31 +101,6 @@ export default function TryItPanel() {
     }
     setBusy(false);
   }
-
-  // Autopilot: send one real message, then run the real runaway interception.
-  const autopilot = useAutopilot();
-  const autoRan = useRef(false);
-  useEffect(() => {
-    if (!autopilot || autoRan.current) return;
-    autoRan.current = true;
-    let cancelled = false;
-    (async () => {
-      await sleep(2600);
-      if (cancelled) return;
-      const msg = "Summarize our Q3 refund policy in two lines.";
-      await typeInto(setInput, msg);
-      await sleep(450);
-      if (cancelled) return;
-      await sendMessage(msg);
-      await sleep(2200);
-      if (cancelled) return;
-      await handleRunaway();
-    })();
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autopilot]);
 
   return (
     <div className="rounded-md border border-border bg-surface">
