@@ -38,12 +38,12 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     <SocketProvider>
       <div className="min-h-screen bg-background md:flex">
-        {/* Sidebar */}
-        <aside className="md:w-60 md:shrink-0 md:h-screen md:sticky md:top-0 border-b md:border-b-0 md:border-r border-border bg-surface/40 flex md:flex-col">
-          <div className="flex md:flex-col md:h-full w-full">
+        {/* Sidebar (desktop) / stacked header (mobile) */}
+        <aside className="md:w-60 md:shrink-0 md:h-screen md:sticky md:top-0 border-b md:border-b-0 md:border-r border-border bg-surface/40">
+          <div className="flex flex-col md:h-full">
             <Link
               href="/"
-              className="flex items-center gap-2.5 px-5 h-16 md:border-b border-border shrink-0"
+              className="flex items-center gap-2.5 px-5 h-16 border-b border-border shrink-0"
             >
               <Image
                 src="/brewing-logo.png"
@@ -55,7 +55,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               <span className="text-headline text-lg">BREAKWATER</span>
             </Link>
 
-            {/* Workspace */}
+            {/* Workspace (desktop only) */}
             <div className="hidden md:block px-5 py-4 border-b border-border">
               <p className="text-[13px] font-operational text-foreground truncate">
                 {workspace.name}
@@ -66,8 +66,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               </p>
             </div>
 
-            {/* Nav */}
-            <nav className="flex md:flex-col gap-1 px-3 md:px-3 py-2 md:py-4 flex-1 overflow-x-auto">
+            {/* Nav: full-width equal row on mobile, column on desktop */}
+            <nav className="flex md:flex-col gap-1 p-2 md:px-3 md:py-4 md:flex-1">
               {NAV.map((item) => {
                 const active = item.exact
                   ? pathname === item.href
@@ -76,7 +76,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`rounded-md px-3 py-2 text-[13px] font-operational whitespace-nowrap transition-colors duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-strong focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+                    className={`flex-1 md:flex-none text-center md:text-left rounded-md px-2 md:px-3 py-2 text-[13px] font-operational transition-colors duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-strong focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
                       active
                         ? "bg-accent/20 text-foreground"
                         : "text-muted hover:text-secondary hover:bg-surface"
@@ -88,7 +88,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               })}
             </nav>
 
-            <div className="hidden md:block px-5 py-4 border-t border-border">
+            <div className="hidden md:block px-5 py-4 border-t border-border mt-auto">
               <ConnectionDot />
             </div>
           </div>
