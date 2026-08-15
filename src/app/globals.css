@@ -101,9 +101,163 @@ body {
   animation: reveal-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+/* --- Hero flow: agent traffic streaming through the breaker (GPU only) --- */
+@keyframes bw-flow {
+  0% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  92% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(480px);
+    opacity: 0;
+  }
+}
+@keyframes bw-surge {
+  0%,
+  48% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+  55% {
+    opacity: 1;
+  }
+  72%,
+  80% {
+    transform: translateX(226px);
+    opacity: 1;
+  }
+  90%,
+  100% {
+    transform: translateX(226px);
+    opacity: 0;
+  }
+}
+@keyframes bw-trip {
+  0%,
+  68%,
+  94%,
+  100% {
+    stroke: #334155;
+  }
+  74%,
+  84% {
+    stroke: #d16a7e;
+  }
+}
+@keyframes bw-halt {
+  0%,
+  70% {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  78%,
+  90% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  97%,
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes bw-scan {
+  0%,
+  100% {
+    opacity: 0.12;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 0.5;
+    transform: translateY(92px);
+  }
+}
+@keyframes bw-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+@keyframes bw-drift-a {
+  0%,
+  100% {
+    transform: translate(-8%, -6%) scale(1);
+  }
+  50% {
+    transform: translate(10%, 8%) scale(1.25);
+  }
+}
+@keyframes bw-drift-b {
+  0%,
+  100% {
+    transform: translate(8%, 6%) scale(1.1);
+  }
+  50% {
+    transform: translate(-10%, -8%) scale(1);
+  }
+}
+@keyframes bw-sheen {
+  0% {
+    background-position: -120% 0;
+  }
+  100% {
+    background-position: 220% 0;
+  }
+}
+
+.bw-static {
+  display: none;
+}
+.bw-pkt {
+  animation: bw-flow 3.8s linear infinite;
+}
+.bw-red {
+  animation: bw-surge 6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+.bw-gate-stroke {
+  animation: bw-trip 6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+.bw-halt {
+  animation: bw-halt 6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+.bw-scanline {
+  animation: bw-scan 2.6s ease-in-out infinite;
+}
+.bw-float {
+  animation: bw-float 5s ease-in-out infinite;
+}
+.bw-glow-a {
+  animation: bw-drift-a 20s ease-in-out infinite;
+}
+.bw-glow-b {
+  animation: bw-drift-b 26s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .node-pulse,
-  .reveal-in {
+  .reveal-in,
+  .bw-pkt,
+  .bw-red,
+  .bw-gate-stroke,
+  .bw-halt,
+  .bw-scanline,
+  .bw-float,
+  .bw-glow-a,
+  .bw-glow-b {
     animation: none;
+  }
+  .bw-motion {
+    display: none;
+  }
+  .bw-static {
+    display: block;
   }
 }

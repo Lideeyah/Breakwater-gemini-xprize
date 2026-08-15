@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { PLANS, type PlanId } from "./lib/workspace";
+import HeroFlow from "./components/HeroFlow";
 
 export default function Landing() {
   return (
@@ -38,7 +39,34 @@ export default function Landing() {
       </header>
 
       {/* Hero */}
-      <section className="max-w-6xl mx-auto px-5 pt-24 pb-20 text-center">
+      <section className="relative overflow-hidden">
+        {/* Ambient drifting glow — quiet, constant life behind the hero */}
+        <div aria-hidden className="pointer-events-none absolute inset-0">
+          <div
+            className="bw-glow-a absolute left-1/2 top-16 h-[440px] w-[560px] -translate-x-1/2 rounded-full blur-3xl"
+            style={{
+              background:
+                "radial-gradient(closest-side, rgba(124,139,161,0.20), transparent)",
+            }}
+          />
+          <div
+            className="bw-glow-b absolute left-[30%] top-40 h-[380px] w-[440px] rounded-full blur-3xl"
+            style={{
+              background:
+                "radial-gradient(closest-side, rgba(154,156,203,0.16), transparent)",
+            }}
+          />
+          <div
+            className="bw-glow-a absolute right-[22%] top-8 h-[320px] w-[380px] rounded-full blur-3xl"
+            style={{
+              background:
+                "radial-gradient(closest-side, rgba(47,185,138,0.10), transparent)",
+              animationDelay: "-7s",
+            }}
+          />
+        </div>
+
+        <div className="relative z-10 max-w-6xl mx-auto px-5 pt-20 pb-16 text-center">
         <p
           className="reveal-in text-[11px] uppercase tracking-[0.2em] font-operational text-accent"
           style={{ animationDelay: "0ms" }}
@@ -70,7 +98,7 @@ export default function Landing() {
             href="/get-started"
             className="rounded-md bg-accent/20 border border-border-strong px-6 py-3 text-[15px] font-operational text-foreground transition-colors duration-100 hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-strong focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
-            Get started free →
+            Get started for free →
           </Link>
           <a
             href="#how"
@@ -85,6 +113,15 @@ export default function Landing() {
         >
           No credit card. Connect your first agent in under a minute.
         </p>
+
+        {/* Live vision: traffic flows through Breakwater; a runaway loop is cut. */}
+        <div
+          className="reveal-in mt-12 mx-auto max-w-3xl rounded-lg border border-border bg-surface/50 p-6 sm:p-10"
+          style={{ animationDelay: "420ms" }}
+        >
+          <HeroFlow />
+        </div>
+        </div>
       </section>
 
       {/* The problem */}
@@ -193,7 +230,7 @@ export default function Landing() {
             href="/get-started"
             className="mt-8 inline-block rounded-md bg-accent/20 border border-border-strong px-7 py-3.5 text-[15px] font-operational text-foreground transition-colors duration-100 hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-strong focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
-            Get started free →
+            Get started for free →
           </Link>
         </div>
       </section>
@@ -222,7 +259,7 @@ function Stat({ k, t, b }: { k: string; t: string; b: string }) {
 
 function HowCard({ n, title, body }: { n: string; title: string; body: string }) {
   return (
-    <div className="rounded-md border border-border bg-surface p-6">
+    <div className="rounded-md border border-border bg-surface p-6 transition-colors duration-150 hover:border-border-strong">
       <span className="text-[12px] font-operational text-accent tabular-nums">
         {n}
       </span>
