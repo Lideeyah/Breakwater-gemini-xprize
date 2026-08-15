@@ -6,6 +6,7 @@ import AlertBanner from "./components/AlertBanner";
 import LatencyChart from "./components/LatencyChart";
 import InterceptFeed from "./components/InterceptFeed";
 import LiveDemo from "./components/LiveDemo";
+import RunawayBurn from "./components/RunawayBurn";
 
 function evaluatorLabel(evaluator: string | null, geminiLive: boolean): string {
   if (evaluator?.includes("gemini")) return "Gemini Flash";
@@ -85,6 +86,11 @@ export default function Overview() {
           sub="runaway agents stopped"
           tone={stats.haltedLoops > 0 ? "failure" : "neutral"}
         />
+      </div>
+
+      {/* Runaway burn meter - the headline sell */}
+      <div className="mt-5">
+        <RunawayBurn />
       </div>
 
       {/* Live protection showcase */}
