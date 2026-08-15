@@ -48,7 +48,7 @@ async function main() {
   await page.evaluate(() => window.scrollTo({ top: 0, behavior: "smooth" }));
   await sleep(1400);
 
-  // --- Get started -----------------------------------------------------------
+  // --- Get started (brief visual, then jump to the app) ----------------------
   await page.getByRole("link", { name: "Get started for free" }).first().click();
   await page.waitForURL("**/get-started");
   await sleep(900);
@@ -56,19 +56,28 @@ async function main() {
   await page.locator("#ws").pressSequentially("Northwind Labs", { delay: 55 });
   await sleep(350);
   await page.locator("#email").pressSequentially("ops@northwind.ai", { delay: 45 });
-  await sleep(500);
-  await page.getByRole("button", { name: "Create workspace" }).click();
-  await sleep(1100);
+  await sleep(800);
 
-  // Connect step
-  await page.locator("#agent").fill("");
-  await page.locator("#agent").pressSequentially("invoice-processor", { delay: 55 });
-  await sleep(500);
-  await page.getByRole("button", { name: "Send a test call" }).click();
-  await page.getByText(/is protected/i).waitFor({ timeout: 25000 });
-  await sleep(1600);
-  await page.getByRole("button", { name: /Go to my dashboard/i }).click();
-  await page.waitForURL("**/dashboard");
+  // Seed the workspace and go straight to the dashboard. The live "test call"
+  // step in onboarding is a cold-start-flaky round-trip right after a deploy and
+  // is not the point of the film; the dashboard is. This keeps the recording
+  // deterministic while still showing the sign-up screen.
+  await page.evaluate(() => {
+    const now = Date.now();
+    localStorage.setItem(
+      "breakwater.workspace",
+      JSON.stringify({
+        name: "Northwind Labs",
+        email: "ops@northwind.ai",
+        plan: "team",
+        agents: [
+          { id: "invoice-processor", name: "invoice-processor", createdAt: now },
+        ],
+        createdAt: now,
+      }),
+    );
+  });
+  await page.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
   await sleep(2600);
 
   // --- Dashboard: the runaway burn meter (the headline sell) -----------------
@@ -80,9 +89,13 @@ async function main() {
   await burnBtn.scrollIntoViewIfNeeded();
   await sleep(1600);
   await burnBtn.click();
-  // Wait for the full sequence to land: climb -> trip -> projection race -> the
-  // "Loss avoided" figure appears only in the final stopped state.
-  await page.getByText(/Loss avoided/i).waitFor({ timeout: 60000 });
+  // Wait for the full sequence to land: climb -> trip -> projection race. This
+  // sentence is unique to the burn meter's final stopped state, so it avoids
+  // colliding with the "Projected loss avoided" stat cards elsewhere on the page.
+  await page
+    .getByText(/Left running for an hour/i)
+    .first()
+    .waitFor({ timeout: 60000 });
   await sleep(4200); // hold on the projected loss
 
   // --- Dashboard: run the live protection showcase ---------------------------
@@ -96,17 +109,15 @@ async function main() {
   await sleep(1400);
   await runBtn.click();
 
-  // Wait for the run to actually finish rather than guessing a duration: the
-  // input-row button reads "Running…" for the whole run, then flips back.
-  await page
-    .getByText(/Running/i)
-    .first()
+  // Wait for the run to finish rather than guessing a duration: the showcase's
+  // own button reads "Running…" for the whole run, then flips back to "Run live
+  // demo". Scope to the button role so the match cannot collide with body text
+  // like the burn meter's "Left running for an hour" sentence.
+  const showcaseRunning = page.getByRole("button", { name: /Running/i });
+  await showcaseRunning
     .waitFor({ state: "visible", timeout: 12000 })
     .catch(() => {});
-  await page
-    .getByText(/Running/i)
-    .first()
-    .waitFor({ state: "hidden", timeout: 120000 });
+  await showcaseRunning.waitFor({ state: "hidden", timeout: 120000 });
   await sleep(2600); // hold on the final stats
 
   // --- Wrap up ---------------------------------------------------------------
