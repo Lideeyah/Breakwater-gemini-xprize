@@ -71,6 +71,20 @@ async function main() {
   await page.waitForURL("**/dashboard");
   await sleep(2600);
 
+  // --- Dashboard: the runaway burn meter (the headline sell) -----------------
+  // A real looping agent's projected spend races upward, then Breakwater cuts it
+  // off after a cent or two and reveals the loss it prevented.
+  const burnBtn = page
+    .getByRole("button", { name: /Unleash the runaway/i })
+    .first();
+  await burnBtn.scrollIntoViewIfNeeded();
+  await sleep(1600);
+  await burnBtn.click();
+  // Wait for the full sequence to land: climb -> trip -> projection race -> the
+  // "Loss avoided" figure appears only in the final stopped state.
+  await page.getByText(/Loss avoided/i).waitFor({ timeout: 60000 });
+  await sleep(4200); // hold on the projected loss
+
   // --- Dashboard: run the live protection showcase ---------------------------
   // Four real scenarios play in order: a normal request passes, an exact-repeat
   // loop is killed by the deterministic tier, a reworded retry loop and a prompt

@@ -47,7 +47,7 @@ const WORK_LINES = [
 
 function buildSeedHistory(): Turn[] {
   const turns: Turn[] = [];
-  for (let i = 0; i < 16; i++) {
+  for (let i = 0; i < 34; i++) {
     const w = WORK_LINES[i % WORK_LINES.length];
     turns.push({ role: "assistant", content: `Step ${i + 1}: ${w}` });
     turns.push({ role: "tool", content: `ok, recorded. ${w}` });
