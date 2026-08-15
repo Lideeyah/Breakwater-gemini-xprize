@@ -5,7 +5,7 @@ import { useWorkspace } from "../lib/workspace";
 import AlertBanner from "./components/AlertBanner";
 import LatencyChart from "./components/LatencyChart";
 import InterceptFeed from "./components/InterceptFeed";
-import TryItPanel from "./components/TryItPanel";
+import LiveDemo from "./components/LiveDemo";
 
 function evaluatorLabel(evaluator: string | null, geminiLive: boolean): string {
   if (evaluator?.includes("gemini")) return "Gemini Flash";
@@ -87,9 +87,9 @@ export default function Overview() {
         />
       </div>
 
-      {/* Try it */}
+      {/* Live protection showcase */}
       <div className="mt-5">
-        <TryItPanel />
+        <LiveDemo />
       </div>
 
       {/* Chart + feed */}

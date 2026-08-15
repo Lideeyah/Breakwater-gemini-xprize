@@ -212,6 +212,53 @@ body {
     background-position: 220% 0;
   }
 }
+@keyframes demo-progress {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+@keyframes bw-slam {
+  0% {
+    transform: scale(1.05);
+    opacity: 0;
+  }
+  55% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@keyframes bw-flash {
+  0% {
+    opacity: 0.55;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.bw-slam {
+  animation: bw-slam 280ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.bw-flash {
+  animation: bw-flash 480ms ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bw-slam,
+  .bw-flash {
+    animation: none !important;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .demo-progress-bar {
+    animation: none !important;
+    width: 100% !important;
+  }
+}
 
 .bw-static {
   display: none;
