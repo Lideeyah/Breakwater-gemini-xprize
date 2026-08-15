@@ -7,6 +7,7 @@
 // Output: demo/recording/<timestamp>.webm  (plus the path is printed at the end)
 
 import { chromium } from "playwright";
+import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { mkdirSync, readdirSync, renameSync } from "node:fs";
@@ -81,45 +82,39 @@ async function main() {
   await page.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
   await sleep(2600);
 
-  // --- Dashboard: the runaway burn meter (the headline sell) -----------------
-  // A real looping agent's projected spend races upward, then Breakwater cuts it
-  // off after a cent or two and reveals the loss it prevented.
-  const burnBtn = page
-    .getByRole("button", { name: /Unleash the runaway/i })
-    .first();
-  await burnBtn.scrollIntoViewIfNeeded();
-  await sleep(1600);
-  await burnBtn.click();
-  // Wait for the full sequence to land: climb -> trip -> projection race. This
-  // sentence is unique to the burn meter's final stopped state, so it avoids
-  // colliding with the "Projected loss avoided" stat cards elsewhere on the page.
-  await page
-    .getByText(/Left running for an hour/i)
-    .first()
-    .waitFor({ timeout: 60000 });
-  await sleep(4200); // hold on the projected loss
+  // --- Dashboard: real agent, real interception ------------------------------
+  // No demo buttons. The dashboard is live and connected to the proxy over its
+  // WebSocket. We start a REAL runaway agent (a separate process) that loops
+  // against the same proxy; Breakwater trips the breaker and the dashboard
+  // reacts on its own - exactly what an operator sees in production.
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+  // The calm "monitoring" copy only renders once the socket is open, so waiting
+  // for it confirms the dashboard is connected before we send any traffic.
+  await page.getByText(/Monitoring live agent traffic/i).waitFor({ timeout: 20000 });
+  await sleep(2600); // hold on the calm monitoring state
 
-  // --- Dashboard: run the live protection showcase ---------------------------
-  // Four real scenarios play in order: a normal request passes, an exact-repeat
-  // loop is killed by the deterministic tier, a reworded retry loop and a prompt
-  // injection are both caught by Gemini 2.5 Flash. Each verdict holds ~3.8s.
-  const runBtn = page
-    .getByRole("button", { name: /Run the live demo/i })
-    .first();
-  await runBtn.scrollIntoViewIfNeeded();
-  await sleep(1400);
-  await runBtn.click();
+  // Point the agent at the same origin we are recording. Behind one Cloud Run
+  // URL the proxy is same-origin; locally, override with AGENT_PROXY_URL.
+  const agent = spawn("npm", ["run", "agent:invoice"], {
+    cwd: join(__dirname, ".."),
+    env: {
+      ...process.env,
+      PROXY_URL: process.env.AGENT_PROXY_URL || BASE,
+      AGENT_ID: "invoice-processor",
+    },
+    stdio: "inherit",
+  });
 
-  // Wait for the run to finish rather than guessing a duration: the showcase's
-  // own button reads "Running…" for the whole run, then flips back to "Run live
-  // demo". Scope to the button role so the match cannot collide with body text
-  // like the burn meter's "Left running for an hour" sentence.
-  const showcaseRunning = page.getByRole("button", { name: /Running/i });
-  await showcaseRunning
-    .waitFor({ state: "visible", timeout: 12000 })
-    .catch(() => {});
-  await showcaseRunning.waitFor({ state: "hidden", timeout: 120000 });
-  await sleep(2600); // hold on the final stats
+  // The breaker trips within a few iterations. This copy is unique to the
+  // live-intercept card, so it only appears when the real event has landed.
+  await page.getByText(/CIRCUIT BREAKER TRIPPED/i).waitFor({ timeout: 60000 });
+  await sleep(5200); // hold on the live intercept reveal and the updated stats
+
+  try {
+    agent.kill("SIGTERM");
+  } catch {
+    /* already exited on its own */
+  }
 
   // --- Wrap up ---------------------------------------------------------------
   await context.close(); // flushes the video

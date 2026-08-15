@@ -5,8 +5,7 @@ import { useWorkspace } from "../lib/workspace";
 import AlertBanner from "./components/AlertBanner";
 import LatencyChart from "./components/LatencyChart";
 import InterceptFeed from "./components/InterceptFeed";
-import LiveDemo from "./components/LiveDemo";
-import RunawayBurn from "./components/RunawayBurn";
+import LiveIntercept from "./components/LiveIntercept";
 
 function evaluatorLabel(evaluator: string | null, geminiLive: boolean): string {
   if (evaluator?.includes("gemini")) return "Gemini Flash";
@@ -88,14 +87,9 @@ export default function Overview() {
         />
       </div>
 
-      {/* Runaway burn meter - the headline sell */}
+      {/* Live intercept - reacts to real agent traffic over the WebSocket */}
       <div className="mt-5">
-        <RunawayBurn />
-      </div>
-
-      {/* Live protection showcase */}
-      <div className="mt-5">
-        <LiveDemo />
+        <LiveIntercept />
       </div>
 
       {/* Chart + feed */}

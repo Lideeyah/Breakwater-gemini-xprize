@@ -140,7 +140,7 @@ export class PolicyEngine {
     loopConfidence = loopResult.confidence;
     if (loopResult.detected && loopResult.confidence >= PolicyEngine.config.loopThreshold) {
       violations.push(
-        `Loop detected for agent "${agentKey}": type="${loopResult.loopType}", confidence=${loopResult.confidence}, matches=${loopResult.matchCount}`,
+        `Loop detected: the agent repeated the same call ${loopResult.matchCount} times with no change in strategy.`,
       );
     }
 
