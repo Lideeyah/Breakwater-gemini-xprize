@@ -71,20 +71,29 @@ async function main() {
   await page.waitForURL("**/dashboard");
   await sleep(2600);
 
-  // --- Dashboard: real chat, then real runaway -------------------------------
-  const ask = page.getByPlaceholder("Ask something…");
-  await ask.click();
-  await ask.pressSequentially("Summarize our Q3 refund policy in two lines.", {
-    delay: 35,
-  });
-  await sleep(400);
-  await page.getByRole("button", { name: "Send", exact: true }).click();
-  await page.getByText(/gemini/i).first().waitFor({ timeout: 25000 });
-  await sleep(2600);
+  // --- Dashboard: run the live protection showcase ---------------------------
+  // Four real scenarios play in order: a normal request passes, an exact-repeat
+  // loop is killed by the deterministic tier, a reworded retry loop and a prompt
+  // injection are both caught by Gemini 2.5 Flash. Each verdict holds ~3.8s.
+  const runBtn = page
+    .getByRole("button", { name: /Run the live demo/i })
+    .first();
+  await runBtn.scrollIntoViewIfNeeded();
+  await sleep(1400);
+  await runBtn.click();
 
-  await page.getByRole("button", { name: "Simulate runaway" }).click();
-  await page.getByText(/halted/i).waitFor({ timeout: 30000 });
-  await sleep(3500);
+  // Wait for the run to actually finish rather than guessing a duration: the
+  // input-row button reads "Running…" for the whole run, then flips back.
+  await page
+    .getByText(/Running/i)
+    .first()
+    .waitFor({ state: "visible", timeout: 12000 })
+    .catch(() => {});
+  await page
+    .getByText(/Running/i)
+    .first()
+    .waitFor({ state: "hidden", timeout: 120000 });
+  await sleep(2600); // hold on the final stats
 
   // --- Wrap up ---------------------------------------------------------------
   await context.close(); // flushes the video
