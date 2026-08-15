@@ -105,16 +105,10 @@ export default function Landing() {
           />
         </div>
 
-        <div className="relative z-10 max-w-6xl mx-auto px-5 pt-20 pb-16 text-center">
-        <p
-          className="reveal-in text-[11px] uppercase tracking-[0.2em] font-operational text-accent"
-          style={{ animationDelay: "0ms" }}
-        >
-          Risk &amp; Capital Firewall for AI Agents
-        </p>
+        <div className="relative z-10 max-w-6xl mx-auto px-5 pt-24 pb-16 text-center">
         <h1
-          className="reveal-in text-headline text-5xl sm:text-7xl mt-6 leading-[1.0]"
-          style={{ animationDelay: "80ms" }}
+          className="reveal-in text-headline text-5xl sm:text-7xl leading-[1.0]"
+          style={{ animationDelay: "0ms" }}
         >
           Stop runaway agents
           <br />
