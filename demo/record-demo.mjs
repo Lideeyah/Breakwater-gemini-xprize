@@ -35,10 +35,11 @@ async function main() {
   const page = await context.newPage();
 
   // --- Landing (fresh) -------------------------------------------------------
+  // The browser context is created fresh each run, so localStorage is already
+  // empty. Load the page ONCE and let the hero play cleanly - an extra reload
+  // here restarts the word-by-word animation and reads as a glitch on film.
   await page.goto(`${BASE}/`, { waitUntil: "networkidle" });
-  await page.evaluate(() => localStorage.clear());
-  await page.reload({ waitUntil: "networkidle" });
-  await sleep(4500); // let the hero play
+  await sleep(4800); // let the hero play through
 
   // gentle tour of the page
   for (const y of [700, 1500, 2400, 3200]) {

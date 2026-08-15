@@ -34,12 +34,12 @@ export default function HeroFlow() {
 
       {/* Agent node */}
       <g>
-        <rect x="24" y="88" width="96" height="44" rx="10" fill="#0f172a" stroke="#1e293b" />
+        <rect x="24" y="88" width="96" height="44" rx="10" fill="#161f33" stroke="#334155" strokeWidth="1.5" />
         <text
           x="72"
           y="114"
           textAnchor="middle"
-          fill="#94a3b8"
+          fill="#cbd5e1"
           fontSize="12"
           fontFamily="var(--font-jetbrains)"
           letterSpacing="0.5"
@@ -50,12 +50,12 @@ export default function HeroFlow() {
 
       {/* LLM node */}
       <g>
-        <rect x="600" y="88" width="96" height="44" rx="10" fill="#0f172a" stroke="#1e293b" />
+        <rect x="600" y="88" width="96" height="44" rx="10" fill="#161f33" stroke="#334155" strokeWidth="1.5" />
         <text
           x="648"
           y="114"
           textAnchor="middle"
-          fill="#94a3b8"
+          fill="#cbd5e1"
           fontSize="12"
           fontFamily="var(--font-jetbrains)"
           letterSpacing="0.5"
