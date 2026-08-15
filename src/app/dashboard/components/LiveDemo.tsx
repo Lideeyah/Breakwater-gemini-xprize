@@ -128,6 +128,15 @@ function tierLabel(evaluator: string): string {
   return "Deterministic tier";
 }
 
+// The real decision latency, formatted for display. Sub-millisecond deterministic
+// checks read as "<1ms"; semantic checks read in whole ms up to a second, then in
+// seconds. This is the actual speed Breakwater decided in, never a padded number.
+function fmtLatency(ms: number): string {
+  if (ms < 1) return "<1ms";
+  if (ms < 1000) return `${Math.round(ms)}ms`;
+  return `${(ms / 1000).toFixed(2)}s`;
+}
+
 type Stage =
   | { phase: "idle" }
   | { phase: "scanning"; sc: Scenario; attempt: number }
@@ -302,7 +311,8 @@ export default function LiveDemo() {
                 <p className="text-[13px] font-operational text-success">
                   ✓ Forwarded to the model
                   <span className="text-muted">
-                    {"  "}· {tierLabel(stage.r.evaluator)} · {stage.r.latencyMs}ms
+                    {"  "}· cleared in {fmtLatency(stage.r.latencyMs)} ·{" "}
+                    {tierLabel(stage.r.evaluator)}
                   </span>
                 </p>
                 {stage.r.reply && (
@@ -321,17 +331,33 @@ export default function LiveDemo() {
                     CIRCUIT BREAKER TRIPPED
                   </span>
                 </div>
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <span className="rounded-full border border-border-strong bg-surface px-2.5 py-1 text-[10px] uppercase tracking-wider font-operational text-secondary">
-                    {tierLabel(stage.r.evaluator)} · {stage.r.latencyMs}ms
-                  </span>
+
+                {/* Hero: the real decision latency. This is the speed we sell. */}
+                <div className="mt-3 flex items-end justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider font-operational text-muted">
+                      Detected in
+                    </p>
+                    <p className="text-[30px] leading-none font-operational text-foreground tabular-nums">
+                      {fmtLatency(stage.r.latencyMs)}
+                    </p>
+                    <p className="mt-1 text-[11px] font-operational text-secondary">
+                      {tierLabel(stage.r.evaluator)}
+                    </p>
+                  </div>
                   {stage.r.saved > 0 && (
-                    <span className="rounded-full border border-success/40 px-2.5 py-1 text-[10px] uppercase tracking-wider font-operational text-success">
-                      +${stage.r.saved.toFixed(2)} avoided
-                    </span>
+                    <div className="text-right">
+                      <p className="text-[10px] uppercase tracking-wider font-operational text-muted">
+                        Loss avoided
+                      </p>
+                      <p className="text-[22px] leading-none font-operational text-success tabular-nums">
+                        +${stage.r.saved.toFixed(2)}
+                      </p>
+                    </div>
                   )}
                 </div>
-                <p className="mt-2.5 text-[13px] text-secondary leading-relaxed">
+
+                <p className="mt-3 text-[13px] text-secondary leading-relaxed">
                   {stage.r.reason}
                 </p>
               </div>
