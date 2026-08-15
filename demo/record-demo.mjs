@@ -88,16 +88,20 @@ async function main() {
     await page.getByRole("button", { name: lang, exact: true }).click();
     await sleep(2000); // each language its own beat
   }
-  await sleep(900);
+  // Copy the one line - the natural action on a snippet you take into your app.
+  await page.getByRole("button", { name: "Copy" }).click();
+  await sleep(1700); // "Copied ✓" feedback
 
-  // Step 3 - the REAL test call through the proxy. "Go to my dashboard" only
-  // unlocks once it succeeds.
+  // Step 3 - the REAL test call through the proxy. Hold on the confirmation so
+  // the outcome is readable before moving on. "Go to my dashboard" only unlocks
+  // once the test succeeds.
   const testBtn = page.getByRole("button", { name: "Send a test call" });
   await testBtn.scrollIntoViewIfNeeded();
-  await sleep(800);
+  await sleep(900);
   await testBtn.click();
   await page.getByText(/is protected/i).waitFor({ timeout: 45000 });
-  await sleep(2200);
+  await page.getByText(/is protected/i).scrollIntoViewIfNeeded();
+  await sleep(3400); // read the "Connected - protected" confirmation
   await page.getByRole("button", { name: /Go to my dashboard/i }).click();
   await page.waitForURL("**/dashboard");
   await sleep(2600);

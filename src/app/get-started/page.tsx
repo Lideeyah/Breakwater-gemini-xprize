@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -236,23 +236,42 @@ const client = new OpenAI({
               </Step>
 
               <Step n={3} title="Test the connection">
-                <div className="flex items-center gap-3 flex-wrap">
-                  <button
-                    onClick={runTest}
-                    disabled={test.state === "running"}
-                    aria-busy={test.state === "running"}
-                    className="rounded-md bg-accent/20 border border-border-strong px-4 py-2 text-[13px] font-operational text-foreground transition-colors duration-100 hover:bg-accent/30 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-strong focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                  >
-                    {test.state === "running"
-                      ? "Checking…"
-                      : "Send a test call"}
-                  </button>
-                  {test.state === "ok" && (
-                    <span className="text-[13px] font-operational text-success">
-                      ✓ Connected - {agentId} is protected
-                    </span>
-                  )}
-                </div>
+                <p className="text-[13px] text-secondary leading-relaxed mb-3">
+                  Send one real request through Breakwater to confirm the proxy is
+                  in the path.
+                </p>
+                <button
+                  onClick={runTest}
+                  disabled={test.state === "running"}
+                  aria-busy={test.state === "running"}
+                  className="rounded-md bg-accent/20 border border-border-strong px-4 py-2 text-[13px] font-operational text-foreground transition-colors duration-100 hover:bg-accent/30 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-strong focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                >
+                  {test.state === "running" ? "Checking…" : "Send a test call"}
+                </button>
+
+                {test.state === "running" && (
+                  <p className="mt-3 flex items-center gap-2 text-[13px] font-operational text-secondary">
+                    <span className="h-1.5 w-1.5 rounded-full bg-accent node-pulse" />
+                    Routing a test call through the proxy…
+                  </p>
+                )}
+
+                {test.state === "ok" && (
+                  <div className="mt-3 rounded-md border border-success/40 bg-success/10 p-4">
+                    <p className="text-[13px] font-operational text-success">
+                      ✓ Connected
+                    </p>
+                    <p className="mt-1.5 text-[13px] text-secondary leading-relaxed">
+                      <span className="font-operational text-foreground">
+                        {agentId}
+                      </span>{" "}
+                      is protected. Breakwater is now inspecting every request
+                      this agent makes and will halt it the moment it starts a
+                      runaway loop.
+                    </p>
+                  </div>
+                )}
+
                 {test.state === "fail" && (
                   <div className="mt-3 rounded-md border border-failure/40 bg-failure/5 p-3.5">
                     <p className="text-[13px] font-operational text-failure">
@@ -381,13 +400,66 @@ function CodeBlock({
   agentId: string;
 }) {
   const [copied, setCopied] = useState(false);
-  const lines = code.split("\n");
+  const [shown, setShown] = useState(0);
+  const [typing, setTyping] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const lastLang = useRef<Lang | null>(null);
+
+  // Reveal the snippet only once it scrolls into view, so it reads as "being
+  // written" the moment the reader arrives at it - a flow, not a static wall.
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([e]) => setVisible(e.isIntersecting),
+      { threshold: 0.4 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  // Type out on first view and on each language switch. Editing the agent name
+  // (same language) updates in place without re-typing, so the two never fight.
+  useEffect(() => {
+    if (!visible || lastLang.current === lang) return;
+    lastLang.current = lang;
+    const reduce =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) {
+      setTyping(false);
+      setShown(code.length);
+      return;
+    }
+    setTyping(true);
+    setShown(0);
+    let n = 0;
+    const step = Math.max(2, Math.round(code.length / 70));
+    const id = setInterval(() => {
+      n += step;
+      if (n >= code.length) {
+        setShown(code.length);
+        setTyping(false);
+        clearInterval(id);
+      } else {
+        setShown(n);
+      }
+    }, 18);
+    return () => clearInterval(id);
+  }, [visible, lang, code]);
+
+  const visibleCode = typing ? code.slice(0, shown) : code;
+  const lines = visibleCode.split("\n");
   // The one line that matters: the base URL swap (or the URL in the cURL call).
   const isHero = (l: string) =>
     /base_url|baseURL/.test(l) || l.includes("/v1/chat/completions");
 
   return (
-    <div className="rounded-md bg-background border border-border overflow-hidden">
+    <div
+      ref={ref}
+      className="rounded-md bg-background border border-border overflow-hidden"
+    >
       <div className="flex items-center justify-between px-4 py-2 border-b border-border">
         <span className="flex items-center gap-2 text-[11px] uppercase tracking-wider font-operational text-muted">
           <span className="h-1.5 w-1.5 rounded-full bg-success/70" />
@@ -395,10 +467,12 @@ function CodeBlock({
         </span>
         <button
           onClick={async () => {
+            // Optimistic: show feedback immediately, even where the clipboard
+            // API is unavailable (headless capture, insecure origins).
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1500);
             try {
               await navigator.clipboard.writeText(code);
-              setCopied(true);
-              setTimeout(() => setCopied(false), 1500);
             } catch {
               /* clipboard unavailable */
             }
@@ -416,6 +490,7 @@ function CodeBlock({
           const m = line.match(/^(.*?)(\s+(?:#|\/\/)\s.*)$/);
           const codePart = m ? m[1] : line;
           const comment = m ? m[2] : "";
+          const caret = typing && i === lines.length - 1;
           return (
             <div
               key={i}
@@ -425,6 +500,9 @@ function CodeBlock({
             >
               {renderCode(codePart, agentId, !hero)}
               {comment && <span className="text-success/90">{comment}</span>}
+              {caret && (
+                <span className="ml-0.5 inline-block h-[14px] w-[7px] translate-y-[2px] bg-accent/80 animate-pulse" />
+              )}
             </div>
           );
         })}
