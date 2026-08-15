@@ -7,6 +7,7 @@ import TokensProcessed from "./components/TokensProcessed";
 import HaltedLoops from "./components/HaltedLoops";
 import LatencyChart from "./components/LatencyChart";
 import InterceptFeed from "./components/InterceptFeed";
+import TryItPanel from "./components/TryItPanel";
 import Image from "next/image";
 
 type BadgeTone = "success" | "failure" | "neutral" | "money";
@@ -152,6 +153,9 @@ export default function DashboardPage() {
 
       {/* Main content */}
       <main className="max-w-7xl mx-auto px-5 py-6 space-y-5">
+        {/* Interactive playground — send a real call through Breakwater */}
+        <TryItPanel />
+
         {/* Stats row */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           <div className="md:col-span-1">
