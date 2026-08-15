@@ -3,9 +3,6 @@
 import { useSocket } from "./components/SocketContext";
 import { useWorkspace } from "../lib/workspace";
 import AlertBanner from "./components/AlertBanner";
-import DollarsSaved from "./components/DollarsSaved";
-import TokensProcessed from "./components/TokensProcessed";
-import HaltedLoops from "./components/HaltedLoops";
 import LatencyChart from "./components/LatencyChart";
 import InterceptFeed from "./components/InterceptFeed";
 import TryItPanel from "./components/TryItPanel";
@@ -66,10 +63,28 @@ export default function Overview() {
       </div>
 
       {/* Stats */}
-      <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4">
-        <DollarsSaved amount={stats.dollarsSaved} />
-        <TokensProcessed count={stats.tokensProcessed} />
-        <HaltedLoops count={stats.haltedLoops} events={events} />
+      <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <StatCard
+          label="Projected loss avoided"
+          value={`$${stats.dollarsSaved.toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}`}
+          sub="runaway spend intercepted"
+          tone="money"
+          pulse={stats.dollarsSaved > 0}
+        />
+        <StatCard
+          label="Tokens processed"
+          value={stats.tokensProcessed.toLocaleString()}
+          sub="forwarded to the model"
+        />
+        <StatCard
+          label="Loops halted"
+          value={String(stats.haltedLoops)}
+          sub="runaway agents stopped"
+          tone={stats.haltedLoops > 0 ? "failure" : "neutral"}
+        />
       </div>
 
       {/* Try it */}
@@ -100,6 +115,44 @@ export default function Overview() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function StatCard({
+  label,
+  value,
+  sub,
+  tone = "neutral",
+  pulse,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  tone?: Tone;
+  pulse?: boolean;
+}) {
+  const valueColor =
+    tone === "money"
+      ? "text-success"
+      : tone === "failure"
+        ? "text-failure"
+        : "text-foreground";
+  return (
+    <div className="rounded-md border border-border bg-surface p-5 min-h-[128px] transition-colors duration-150 hover:border-border-strong">
+      <p className="text-[10px] uppercase tracking-wider font-operational text-muted">
+        {label}
+      </p>
+      <p
+        className={`mt-3 text-3xl font-operational tabular-nums ${valueColor} ${
+          pulse ? "node-pulse" : ""
+        }`}
+      >
+        {value}
+      </p>
+      {sub && (
+        <p className="mt-2 text-[12px] font-operational text-muted">{sub}</p>
+      )}
     </div>
   );
 }
