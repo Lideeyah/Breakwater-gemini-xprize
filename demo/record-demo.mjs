@@ -69,21 +69,35 @@ async function main() {
   await sleep(700);
   await page.getByRole("button", { name: /Create workspace/i }).click();
 
-  // Step 2 - Connect. Name the agent, then show the one-line integration
-  // (base_url -> the Breakwater proxy) across languages, then run the REAL test
-  // call through the proxy. "Go to my dashboard" only unlocks once it succeeds.
-  await page.locator("#agent").waitFor({ timeout: 15000 });
-  await page.locator("#agent").fill("");
-  await page.locator("#agent").pressSequentially(AGENT, { delay: 55 });
-  await sleep(1000);
+  // Step 2 - Connect. Give each beat its own moment: name the agent FIRST and
+  // let it settle, THEN move down to the code block, so the field and the code
+  // never update in the same breath.
+  const agentField = page.locator("#agent");
+  await agentField.waitFor({ timeout: 15000 });
+  await agentField.scrollIntoViewIfNeeded();
+  await sleep(700);
+  await agentField.fill("");
+  await agentField.pressSequentially(AGENT, { delay: 60 });
+  await sleep(2400); // the agent name's own moment
+
+  // Now the code block gets its moment: the one-line integration (base_url ->
+  // the Breakwater proxy), shown across languages.
+  await page.getByText("Add one line to your app").scrollIntoViewIfNeeded();
+  await sleep(2100);
   for (const lang of ["Node", "cURL", "Python"]) {
     await page.getByRole("button", { name: lang, exact: true }).click();
-    await sleep(1500);
+    await sleep(2000); // each language its own beat
   }
-  await sleep(700);
-  await page.getByRole("button", { name: "Send a test call" }).click();
+  await sleep(900);
+
+  // Step 3 - the REAL test call through the proxy. "Go to my dashboard" only
+  // unlocks once it succeeds.
+  const testBtn = page.getByRole("button", { name: "Send a test call" });
+  await testBtn.scrollIntoViewIfNeeded();
+  await sleep(800);
+  await testBtn.click();
   await page.getByText(/is protected/i).waitFor({ timeout: 45000 });
-  await sleep(1900);
+  await sleep(2200);
   await page.getByRole("button", { name: /Go to my dashboard/i }).click();
   await page.waitForURL("**/dashboard");
   await sleep(2600);

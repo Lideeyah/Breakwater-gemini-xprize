@@ -212,6 +212,11 @@ const client = new OpenAI({
               </Step>
 
               <Step n={2} title="Add one line to your app">
+                <p className="text-[13px] text-secondary leading-relaxed mb-3">
+                  Point your existing OpenAI-compatible client at Breakwater. The
+                  highlighted line is the only change - your model and key stay
+                  exactly as they are.
+                </p>
                 <div className="flex items-center gap-1.5 mb-2.5">
                   {(["python", "node", "curl"] as Lang[]).map((l) => (
                     <button
@@ -227,7 +232,7 @@ const client = new OpenAI({
                     </button>
                   ))}
                 </div>
-                <CopyBlock code={snippets[lang]} />
+                <CodeBlock code={snippets[lang]} lang={lang} agentId={agentId} />
               </Step>
 
               <Step n={3} title="Test the connection">
@@ -339,26 +344,90 @@ function Step({
   );
 }
 
-function CopyBlock({ code }: { code: string }) {
-  const [copied, setCopied] = useState(false);
+const LANG_LABEL: Record<Lang, string> = {
+  python: "Python",
+  node: "Node",
+  curl: "cURL",
+};
+
+// Renders one code line: the agent id (what the user just typed) is drawn in the
+// accent colour wherever it appears, so the connection between the field and the
+// code is obvious. Non-highlighted lines are dimmed so the changed line leads.
+function renderCode(part: string, agentId: string, dim: boolean) {
+  const base = dim ? "text-muted" : "text-foreground";
+  if (!agentId || !part.includes(agentId)) {
+    return <span className={base}>{part || " "}</span>;
+  }
+  const chunks = part.split(agentId);
   return (
-    <div className="relative rounded-md bg-background border border-border">
-      <button
-        onClick={async () => {
-          try {
-            await navigator.clipboard.writeText(code);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 1500);
-          } catch {
-            /* clipboard unavailable */
-          }
-        }}
-        className="absolute right-2.5 top-2.5 rounded-md border border-border px-3 py-1.5 text-[12px] font-operational text-secondary transition-colors duration-100 hover:text-foreground hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-strong focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-      >
-        {copied ? "Copied ✓" : "Copy"}
-      </button>
-      <pre className="overflow-x-auto p-4 pr-20 text-[12.5px] font-operational leading-relaxed text-secondary">
-        {code}
+    <>
+      {chunks.map((ch, i) => (
+        <span key={i}>
+          <span className={base}>{ch}</span>
+          {i < chunks.length - 1 && <span className="text-accent">{agentId}</span>}
+        </span>
+      ))}
+    </>
+  );
+}
+
+function CodeBlock({
+  code,
+  lang,
+  agentId,
+}: {
+  code: string;
+  lang: Lang;
+  agentId: string;
+}) {
+  const [copied, setCopied] = useState(false);
+  const lines = code.split("\n");
+  // The one line that matters: the base URL swap (or the URL in the cURL call).
+  const isHero = (l: string) =>
+    /base_url|baseURL/.test(l) || l.includes("/v1/chat/completions");
+
+  return (
+    <div className="rounded-md bg-background border border-border overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-2 border-b border-border">
+        <span className="flex items-center gap-2 text-[11px] uppercase tracking-wider font-operational text-muted">
+          <span className="h-1.5 w-1.5 rounded-full bg-success/70" />
+          {LANG_LABEL[lang]}
+        </span>
+        <button
+          onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(code);
+              setCopied(true);
+              setTimeout(() => setCopied(false), 1500);
+            } catch {
+              /* clipboard unavailable */
+            }
+          }}
+          className="rounded-md border border-border px-3 py-1 text-[12px] font-operational text-secondary transition-colors duration-100 hover:text-foreground hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-strong focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        >
+          {copied ? "Copied ✓" : "Copy"}
+        </button>
+      </div>
+      <pre className="overflow-x-auto py-3 text-[12.5px] font-operational leading-[1.75]">
+        {lines.map((line, i) => {
+          const hero = isHero(line);
+          // Split off a trailing comment (needs whitespace before # or //, so
+          // the // in http:// is never mistaken for a comment).
+          const m = line.match(/^(.*?)(\s+(?:#|\/\/)\s.*)$/);
+          const codePart = m ? m[1] : line;
+          const comment = m ? m[2] : "";
+          return (
+            <div
+              key={i}
+              className={`px-4 border-l-2 ${
+                hero ? "border-success bg-success/10" : "border-transparent"
+              }`}
+            >
+              {renderCode(codePart, agentId, !hero)}
+              {comment && <span className="text-success/90">{comment}</span>}
+            </div>
+          );
+        })}
       </pre>
     </div>
   );
