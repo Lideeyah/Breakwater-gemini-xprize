@@ -44,6 +44,32 @@ function Reveal({
   );
 }
 
+// Headline that moves in word by word on load. Reduced-motion users get it
+// instantly (reveal-in is disabled under prefers-reduced-motion).
+function Words({
+  text,
+  start = 0,
+  step = 70,
+}: {
+  text: string;
+  start?: number;
+  step?: number;
+}) {
+  return (
+    <>
+      {text.split(" ").map((w, i) => (
+        <span
+          key={i}
+          className="reveal-in inline-block mr-[0.25em]"
+          style={{ animationDelay: `${start + i * step}ms` }}
+        >
+          {w}
+        </span>
+      ))}
+    </>
+  );
+}
+
 export default function Landing() {
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -106,17 +132,14 @@ export default function Landing() {
         </div>
 
         <div className="relative z-10 max-w-6xl mx-auto px-5 pt-24 pb-16 text-center">
-        <h1
-          className="reveal-in text-headline text-5xl sm:text-7xl leading-[1.0]"
-          style={{ animationDelay: "0ms" }}
-        >
-          Stop runaway agents
+        <h1 className="text-headline text-5xl sm:text-7xl leading-[1.04]">
+          <Words text="Stop runaway agents" start={0} />
           <br />
-          before they burn your budget.
+          <Words text="before they burn your budget." start={210} />
         </h1>
         <p
           className="reveal-in mx-auto mt-7 max-w-2xl text-[16px] sm:text-lg text-secondary leading-relaxed"
-          style={{ animationDelay: "160ms" }}
+          style={{ animationDelay: "620ms" }}
         >
           Autonomous AI agents hold your API keys and spend real money. When one
           gets stuck in a loop, it drains your budget silently. Breakwater is the
@@ -125,7 +148,7 @@ export default function Landing() {
         </p>
         <div
           className="reveal-in mt-10 flex items-center justify-center gap-3"
-          style={{ animationDelay: "240ms" }}
+          style={{ animationDelay: "720ms" }}
         >
           <Link
             href="/get-started"
@@ -142,7 +165,7 @@ export default function Landing() {
         </div>
         <p
           className="reveal-in mt-5 text-[12px] font-operational text-muted"
-          style={{ animationDelay: "320ms" }}
+          style={{ animationDelay: "820ms" }}
         >
           No credit card. Connect your first agent in under a minute.
         </p>
@@ -150,7 +173,7 @@ export default function Landing() {
         {/* Live vision: traffic flows through Breakwater; a runaway loop is cut. */}
         <div
           className="reveal-in mt-12 mx-auto max-w-3xl rounded-lg border border-border bg-surface/50 p-6 sm:p-10"
-          style={{ animationDelay: "420ms" }}
+          style={{ animationDelay: "940ms" }}
         >
           <HeroFlow />
         </div>
