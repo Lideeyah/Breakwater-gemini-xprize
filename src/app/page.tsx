@@ -2,14 +2,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import TryItPanel from "./dashboard/components/TryItPanel";
+import { PLANS, type PlanId } from "./lib/workspace";
 
 export default function Landing() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Nav */}
       <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-sm">
-        <div className="max-w-5xl mx-auto px-5 h-16 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Image
               src="/brewing-logo.png"
@@ -20,277 +20,257 @@ export default function Landing() {
             />
             <span className="text-headline text-xl">BREAKWATER</span>
           </div>
-          <Link
-            href="/dashboard"
-            className="rounded-md border border-border px-3.5 py-2 text-[13px] font-operational text-secondary transition-colors duration-100 hover:bg-surface hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-strong focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-          >
-            Open dashboard
-          </Link>
+          <nav className="flex items-center gap-2.5">
+            <Link
+              href="/dashboard"
+              className="rounded-md px-3.5 py-2 text-[13px] font-operational text-secondary transition-colors duration-100 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-strong focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            >
+              Sign in
+            </Link>
+            <Link
+              href="/get-started"
+              className="rounded-md bg-accent/20 border border-border-strong px-4 py-2 text-[13px] font-operational text-foreground transition-colors duration-100 hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-strong focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            >
+              Get started
+            </Link>
+          </nav>
         </div>
       </header>
 
       {/* Hero */}
-      <section className="max-w-5xl mx-auto px-5 pt-20 pb-16 text-center">
+      <section className="max-w-6xl mx-auto px-5 pt-24 pb-20 text-center">
         <p
           className="reveal-in text-[11px] uppercase tracking-[0.2em] font-operational text-accent"
           style={{ animationDelay: "0ms" }}
         >
-          Autonomous Agent Risk &amp; Capital Firewall
+          Risk &amp; Capital Firewall for AI Agents
         </p>
         <h1
-          className="reveal-in text-headline text-4xl sm:text-6xl mt-6 leading-[1.02]"
+          className="reveal-in text-headline text-5xl sm:text-7xl mt-6 leading-[1.0]"
           style={{ animationDelay: "80ms" }}
         >
-          Your AI agent has your
+          Stop runaway agents
           <br />
-          API keys and your budget.
+          before they burn your budget.
         </h1>
         <p
-          className="reveal-in mx-auto mt-6 max-w-xl text-[15px] sm:text-lg text-secondary leading-relaxed"
+          className="reveal-in mx-auto mt-7 max-w-2xl text-[16px] sm:text-lg text-secondary leading-relaxed"
           style={{ animationDelay: "160ms" }}
         >
-          When it gets stuck in a loop, it doesn&apos;t crash — it quietly burns
-          tokens and money until someone notices the bill. Breakwater is the
-          circuit breaker that stops it, live.
+          Autonomous AI agents hold your API keys and spend real money. When one
+          gets stuck in a loop, it drains your budget silently. Breakwater is the
+          circuit breaker that watches every call and cuts off a runaway agent
+          the instant it goes wrong.
         </p>
         <div
-          className="reveal-in mt-9 flex items-center justify-center gap-3"
+          className="reveal-in mt-10 flex items-center justify-center gap-3"
           style={{ animationDelay: "240ms" }}
         >
           <Link
-            href="/connect"
-            className="rounded-md bg-accent/20 border border-border-strong px-5 py-2.5 text-[14px] font-operational text-foreground transition-colors duration-100 hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-strong focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            href="/get-started"
+            className="rounded-md bg-accent/20 border border-border-strong px-6 py-3 text-[15px] font-operational text-foreground transition-colors duration-100 hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-strong focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
-            Connect your agent →
+            Get started free →
           </Link>
           <a
-            href="#watch"
-            className="rounded-md px-5 py-2.5 text-[14px] font-operational text-secondary transition-colors duration-100 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-strong focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            href="#how"
+            className="rounded-md px-6 py-3 text-[15px] font-operational text-secondary transition-colors duration-100 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-strong focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
-            Watch it work
+            How it works
           </a>
         </div>
+        <p
+          className="reveal-in mt-5 text-[12px] font-operational text-muted"
+          style={{ animationDelay: "320ms" }}
+        >
+          No credit card. Connect your first agent in under a minute.
+        </p>
       </section>
 
-      {/* Act 1 — the problem */}
-      <section className="max-w-5xl mx-auto px-5 py-12">
-        <StepLabel n="01" text="The problem" />
-        <div className="mt-5 grid gap-8 lg:grid-cols-2 lg:items-center">
+      {/* The problem */}
+      <section className="border-y border-border bg-surface/40">
+        <div className="max-w-6xl mx-auto px-5 py-16 grid gap-10 lg:grid-cols-3">
+          <Stat
+            k="Silent"
+            t="A stuck agent doesn't crash"
+            b="It just retries — the same failing call, over and over — with no error and no alert. Nobody notices until the invoice arrives."
+          />
+          <Stat
+            k="Expensive"
+            t="Tokens are money"
+            b="An unattended loop can burn tens to hundreds of dollars in minutes. One bad overnight run can erase a month of margin."
+          />
+          <Stat
+            k="Invisible"
+            t="Hashing isn't enough"
+            b="Smart agents reword every retry, slipping past naive duplicate checks. You need something that understands intent."
+          />
+        </div>
+      </section>
+
+      {/* How it works */}
+      <section id="how" className="max-w-6xl mx-auto px-5 py-20 scroll-mt-16">
+        <div className="text-center">
+          <p className="text-[11px] uppercase tracking-[0.2em] font-operational text-accent">
+            How it works
+          </p>
+          <h2 className="text-headline text-3xl sm:text-4xl mt-4">
+            Protection in three moves.
+          </h2>
+        </div>
+        <div className="mt-12 grid gap-5 md:grid-cols-3">
+          <HowCard
+            n="01"
+            title="Connect"
+            body="Point your agent's base URL at Breakwater and keep your own model and key. No SDK, no rewrite — one line, any framework."
+          />
+          <HowCard
+            n="02"
+            title="Inspect"
+            body="Every call is checked twice: instant deterministic guards catch obvious loops in about a millisecond, and Gemini 2.5 Flash reads the agent's intent for the subtle ones."
+          />
+          <HowCard
+            n="03"
+            title="Protect"
+            body="The moment an agent goes rogue, Breakwater trips the breaker — the connection is cut, the spend stops, and you see exactly why on your dashboard."
+          />
+        </div>
+      </section>
+
+      {/* Why / benefits */}
+      <section className="border-y border-border bg-surface/40">
+        <div className="max-w-6xl mx-auto px-5 py-16 grid gap-8 lg:grid-cols-2 lg:items-center">
           <div>
-            <h2 className="text-headline text-2xl sm:text-3xl">
-              A stuck agent burns money in silence.
+            <h2 className="text-headline text-3xl">
+              Real intelligence, not a dumb filter.
             </h2>
             <p className="mt-4 text-[15px] text-secondary leading-relaxed">
-              It calls the same failing tool, over and over, with no one
-              watching. There&apos;s no error, no alert — just a climbing bill.
-              One unattended runaway loop overnight can erase a month of margin.
+              Breakwater pairs sub-millisecond deterministic guards with Gemini
+              2.5 Flash so it catches what simple rules miss — reworded loops,
+              cost spirals, and prompt-injection attempts — and explains every
+              decision in plain language a human can trust.
             </p>
           </div>
-          {/* Burning-cost log */}
-          <div
-            className="rounded-md border border-failure/40 bg-surface overflow-hidden"
-            role="img"
-            aria-label="An agent retrying a failing call, with the cost climbing every attempt"
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Benefit t="Drop-in proxy" b="One URL swap. Works with any agent framework." />
+            <Benefit t="Gemini-powered" b="Semantic detection, not just string matching." />
+            <Benefit t="Live dashboard" b="Every decision, streamed in real time." />
+            <Benefit t="Real savings" b="See the runaway spend you avoided, per agent." />
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section id="pricing" className="max-w-6xl mx-auto px-5 py-20">
+        <div className="text-center">
+          <p className="text-[11px] uppercase tracking-[0.2em] font-operational text-accent">
+            Pricing
+          </p>
+          <h2 className="text-headline text-3xl sm:text-4xl mt-4">
+            Start free. Scale when you do.
+          </h2>
+          <p className="mt-3 text-[14px] text-secondary">
+            Every plan includes the full two-tier engine and the live dashboard.
+          </p>
+        </div>
+        <div className="mt-12 grid gap-5 md:grid-cols-3">
+          {(Object.keys(PLANS) as PlanId[]).map((id) => (
+            <PricingCard key={id} id={id} featured={id === "team"} />
+          ))}
+        </div>
+      </section>
+
+      {/* Final CTA */}
+      <section className="border-t border-border">
+        <div className="max-w-6xl mx-auto px-5 py-20 text-center">
+          <h2 className="text-headline text-4xl">
+            Give your agents a safety net.
+          </h2>
+          <p className="mt-3 text-[15px] text-secondary">
+            Connect your first agent in under a minute — free.
+          </p>
+          <Link
+            href="/get-started"
+            className="mt-8 inline-block rounded-md bg-accent/20 border border-border-strong px-7 py-3.5 text-[15px] font-operational text-foreground transition-colors duration-100 hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-strong focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
-            <div className="px-4 py-2.5 border-b border-border text-[10px] uppercase tracking-wider font-operational text-muted">
-              unprotected agent
-            </div>
-            <div className="p-4 font-operational text-[12.5px] space-y-1.5">
-              {[
-                ["attempt 1", "500", "$0.04"],
-                ["attempt 2", "500", "$0.08"],
-                ["attempt 3", "500", "$0.12"],
-                ["attempt 4", "500", "$0.16"],
-                ["attempt 5", "500", "$0.20"],
-              ].map(([a, code, cost]) => (
-                <div key={a} className="flex items-center justify-between">
-                  <span className="text-secondary">
-                    {a} · fetchData() →{" "}
-                    <span className="text-failure">{code}</span>
-                  </span>
-                  <span className="text-failure tabular-nums">{cost}</span>
-                </div>
-              ))}
-              <div className="flex items-center justify-between pt-1 text-muted">
-                <span className="node-pulse">…still looping</span>
-                <span className="tabular-nums">$0.24 · $0.28 · …</span>
-              </div>
-            </div>
-          </div>
+            Get started free →
+          </Link>
         </div>
-      </section>
-
-      {/* Act 2 — the one-line swap */}
-      <section className="max-w-5xl mx-auto px-5 py-12">
-        <StepLabel n="02" text="The fix" />
-        <div className="mt-5">
-          <h2 className="text-headline text-2xl sm:text-3xl">
-            Change one line. Every call is protected.
-          </h2>
-          <p className="mt-4 max-w-2xl text-[15px] text-secondary leading-relaxed">
-            Breakwater is a drop-in reverse proxy. Point your agent&apos;s base
-            URL at it — keep your own model and your own key. No rewrite, no SDK,
-            no lock-in.
-          </p>
-          <div className="mt-7 grid gap-4 md:grid-cols-2">
-            <CodeCard
-              label="Before"
-              tone="muted"
-              lines={[
-                ["client = OpenAI(", ""],
-                ['  base_url="https://api.provider.com/v1",', "muted"],
-                [")", ""],
-              ]}
-            />
-            <CodeCard
-              label="After"
-              tone="success"
-              lines={[
-                ["client = OpenAI(", ""],
-                ['  base_url="https://your-breakwater.run/v1",', "success"],
-                ['  default_headers={"x-agent-id": "my-app"},', "success"],
-                [")", ""],
-              ]}
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* Act 3 — watch it work (interactive) */}
-      <section id="watch" className="max-w-5xl mx-auto px-5 py-12 scroll-mt-20">
-        <StepLabel n="03" text="Watch it work" />
-        <div className="mt-5">
-          <h2 className="text-headline text-2xl sm:text-3xl">
-            Send a real message. Then make the agent go rogue.
-          </h2>
-          <p className="mt-4 max-w-2xl text-[15px] text-secondary leading-relaxed">
-            This is live. Your message flows through Breakwater to Gemini 2.5
-            Flash and back. Hit{" "}
-            <span className="text-foreground">Simulate runaway</span> and watch
-            the breaker trip on the same request, repeated — in the browser, no
-            terminal.
-          </p>
-          <div className="mt-7">
-            <TryItPanel />
-          </div>
-        </div>
-      </section>
-
-      {/* Act 4 — why it's smart */}
-      <section className="max-w-5xl mx-auto px-5 py-12">
-        <StepLabel n="04" text="Why it's different" />
-        <div className="mt-5 grid gap-4 md:grid-cols-2">
-          <FeatureCard
-            title="Tier 1 — deterministic, ~1 ms"
-            body="Hashing, structure, budget, rate, and a 128k-context guard catch the obvious loops instantly, for free."
-            accent="foreground"
-          />
-          <FeatureCard
-            title="Tier 2 — Gemini 2.5 Flash"
-            body="Reads the agent's intent to catch reworded, semantic loops that hashing can't see — and explains why, in plain language."
-            accent="success"
-          />
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="max-w-5xl mx-auto px-5 py-16 text-center">
-        <h2 className="text-headline text-3xl">See the whole picture.</h2>
-        <p className="mt-3 text-[15px] text-secondary">
-          The live control room shows every decision as it happens.
-        </p>
-        <Link
-          href="/dashboard"
-          className="mt-7 inline-block rounded-md bg-accent/20 border border-border-strong px-6 py-3 text-[14px] font-operational text-foreground transition-colors duration-100 hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-strong focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-        >
-          Open the live dashboard →
-        </Link>
       </section>
 
       <footer className="border-t border-border">
-        <div className="max-w-5xl mx-auto px-5 py-6 flex items-center justify-between text-[12px] font-operational text-muted">
+        <div className="max-w-6xl mx-auto px-5 py-6 flex items-center justify-between text-[12px] font-operational text-muted">
           <span>Breakwater</span>
-          <span>Built with Gemini 2.5 Flash · Google Cloud Run</span>
+          <span>Powered by Gemini 2.5 Flash · Google Cloud Run</span>
         </div>
       </footer>
     </div>
   );
 }
 
-function StepLabel({ n, text }: { n: string; text: string }) {
+function Stat({ k, t, b }: { k: string; t: string; b: string }) {
   return (
-    <div className="flex items-center gap-3">
-      <span className="text-[11px] font-operational text-accent tabular-nums">
+    <div>
+      <p className="text-[11px] uppercase tracking-[0.2em] font-operational text-failure">
+        {k}
+      </p>
+      <h3 className="text-headline text-xl mt-3">{t}</h3>
+      <p className="mt-2.5 text-[14px] text-secondary leading-relaxed">{b}</p>
+    </div>
+  );
+}
+
+function HowCard({ n, title, body }: { n: string; title: string; body: string }) {
+  return (
+    <div className="rounded-md border border-border bg-surface p-6">
+      <span className="text-[12px] font-operational text-accent tabular-nums">
         {n}
       </span>
-      <span className="text-[11px] uppercase tracking-[0.2em] font-operational text-muted">
-        {text}
-      </span>
-      <span className="h-px flex-1 bg-border" />
+      <h3 className="text-headline text-2xl mt-3">{title}</h3>
+      <p className="mt-3 text-[14px] text-secondary leading-relaxed">{body}</p>
     </div>
   );
 }
 
-function CodeCard({
-  label,
-  tone,
-  lines,
-}: {
-  label: string;
-  tone: "muted" | "success";
-  lines: [string, string][];
-}) {
+function Benefit({ t, b }: { t: string; b: string }) {
   return (
-    <div className="rounded-md border border-border bg-surface overflow-hidden">
-      <div className="px-4 py-2.5 border-b border-border flex items-center justify-between">
-        <span className="text-[10px] uppercase tracking-wider font-operational text-muted">
-          {label}
+    <div className="rounded-md border border-border bg-surface p-4">
+      <h4 className="text-[13px] font-operational text-foreground">{t}</h4>
+      <p className="mt-1.5 text-[13px] text-secondary leading-relaxed">{b}</p>
+    </div>
+  );
+}
+
+function PricingCard({ id, featured }: { id: PlanId; featured?: boolean }) {
+  const p = PLANS[id];
+  return (
+    <div
+      className={`rounded-md border bg-surface p-6 flex flex-col ${
+        featured ? "border-border-strong" : "border-border"
+      }`}
+    >
+      {featured && (
+        <span className="self-start mb-3 rounded-full bg-accent/20 border border-border-strong px-2.5 py-1 text-[10px] uppercase tracking-wider font-operational text-secondary">
+          Most popular
         </span>
-        <span
-          className={`h-1.5 w-1.5 rounded-full ${
-            tone === "success" ? "bg-success" : "bg-border-strong"
-          }`}
-        />
+      )}
+      <h3 className="text-headline text-xl">{p.name}</h3>
+      <div className="mt-3 flex items-baseline gap-1.5">
+        <span className="text-headline text-4xl tabular-nums">${p.price}</span>
+        <span className="text-[13px] font-operational text-muted">/ mo</span>
       </div>
-      <pre className="p-4 font-operational text-[12.5px] leading-relaxed overflow-x-auto">
-        {lines.map(([text, hl], i) => (
-          <div
-            key={i}
-            className={
-              hl === "success"
-                ? "text-success"
-                : hl === "muted"
-                  ? "text-muted"
-                  : "text-secondary"
-            }
-          >
-            {text || " "}
-          </div>
-        ))}
-      </pre>
-    </div>
-  );
-}
-
-function FeatureCard({
-  title,
-  body,
-  accent,
-}: {
-  title: string;
-  body: string;
-  accent: "foreground" | "success";
-}) {
-  return (
-    <div className="rounded-md border border-border bg-surface p-5">
-      <h3
-        className={`text-[14px] font-operational ${
-          accent === "success" ? "text-success" : "text-foreground"
-        }`}
+      <p className="mt-3 text-[13px] text-secondary leading-relaxed flex-1">
+        {p.blurb}
+      </p>
+      <p className="mt-4 text-[13px] font-operational text-foreground">
+        {p.agentLimit} agent{p.agentLimit === 1 ? "" : "s"}
+      </p>
+      <Link
+        href="/get-started"
+        className="mt-5 rounded-md border border-border-strong px-4 py-2.5 text-center text-[13px] font-operational text-foreground transition-colors duration-100 hover:bg-accent/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-strong focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
-        {title}
-      </h3>
-      <p className="mt-2.5 text-[14px] text-secondary leading-relaxed">{body}</p>
+        {id === "free" ? "Start free" : "Choose " + p.name}
+      </Link>
     </div>
   );
 }
