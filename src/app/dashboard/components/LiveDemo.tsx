@@ -201,7 +201,7 @@ export default function LiveDemo() {
     setStats({ inspected: 0, halted: 0, saved: 0 });
     for (const sc of SCENARIOS) {
       await runScenario(sc);
-      await sleep(2400);
+      await sleep(3800);
     }
     setStage({ phase: "idle" });
     setRunning(false);
