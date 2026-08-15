@@ -1,9 +1,48 @@
 "use client";
 
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { PLANS, type PlanId } from "./lib/workspace";
 import HeroFlow from "./components/HeroFlow";
+
+// Fade + rise a section into view once, as the user scrolls to it. Subtle and
+// one-shot; reduced-motion users get it instantly with no transform.
+function Reveal({
+  children,
+  className = "",
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setShown(true);
+          io.disconnect();
+        }
+      },
+      { threshold: 0.15, rootMargin: "0px 0px -10% 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  return (
+    <div
+      ref={ref}
+      className={`transition duration-500 ease-out motion-reduce:transition-none motion-reduce:opacity-100 motion-reduce:translate-y-0 ${
+        shown ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+      } ${className}`}
+    >
+      {children}
+    </div>
+  );
+}
 
 export default function Landing() {
   return (
@@ -125,6 +164,7 @@ export default function Landing() {
       </section>
 
       {/* The problem */}
+      <Reveal>
       <section className="border-y border-border bg-surface/40">
         <div className="max-w-6xl mx-auto px-5 py-16 grid gap-10 lg:grid-cols-3">
           <Stat
@@ -144,8 +184,10 @@ export default function Landing() {
           />
         </div>
       </section>
+      </Reveal>
 
       {/* How it works */}
+      <Reveal>
       <section id="how" className="max-w-6xl mx-auto px-5 py-20 scroll-mt-16">
         <div className="text-center">
           <p className="text-[11px] uppercase tracking-[0.2em] font-operational text-accent">
@@ -174,7 +216,10 @@ export default function Landing() {
         </div>
       </section>
 
+      </Reveal>
+
       {/* Why / benefits */}
+      <Reveal>
       <section className="border-y border-border bg-surface/40">
         <div className="max-w-6xl mx-auto px-5 py-16 grid gap-8 lg:grid-cols-2 lg:items-center">
           <div>
@@ -197,7 +242,10 @@ export default function Landing() {
         </div>
       </section>
 
+      </Reveal>
+
       {/* Pricing */}
+      <Reveal>
       <section id="pricing" className="max-w-6xl mx-auto px-5 py-20">
         <div className="text-center">
           <p className="text-[11px] uppercase tracking-[0.2em] font-operational text-accent">
@@ -217,7 +265,10 @@ export default function Landing() {
         </div>
       </section>
 
+      </Reveal>
+
       {/* Final CTA */}
+      <Reveal>
       <section className="border-t border-border">
         <div className="max-w-6xl mx-auto px-5 py-20 text-center">
           <h2 className="text-headline text-4xl">
@@ -234,6 +285,7 @@ export default function Landing() {
           </Link>
         </div>
       </section>
+      </Reveal>
 
       <footer className="border-t border-border">
         <div className="max-w-6xl mx-auto px-5 py-6 flex items-center justify-between text-[12px] font-operational text-muted">
@@ -278,19 +330,30 @@ function Benefit({ t, b }: { t: string; b: string }) {
   );
 }
 
+const PLAN_BADGE: Record<PlanId, string> = {
+  free: "Free forever",
+  team: "Most popular",
+  business: "Best for scale",
+};
+
 function PricingCard({ id, featured }: { id: PlanId; featured?: boolean }) {
   const p = PLANS[id];
   return (
     <div
-      className={`rounded-md border bg-surface p-6 flex flex-col ${
+      className={`rounded-md border bg-surface p-6 flex flex-col transition-colors duration-150 hover:border-border-strong ${
         featured ? "border-border-strong" : "border-border"
       }`}
     >
-      {featured && (
-        <span className="self-start mb-3 rounded-full bg-accent/20 border border-border-strong px-2.5 py-1 text-[10px] uppercase tracking-wider font-operational text-secondary">
-          Most popular
-        </span>
-      )}
+      {/* Every card carries a capsule so the plan names align on one line */}
+      <span
+        className={`self-start mb-4 rounded-full px-2.5 py-1 text-[10px] uppercase tracking-wider font-operational border ${
+          featured
+            ? "bg-accent/20 border-border-strong text-secondary"
+            : "border-border text-muted"
+        }`}
+      >
+        {PLAN_BADGE[id]}
+      </span>
       <h3 className="text-headline text-xl">{p.name}</h3>
       <div className="mt-3 flex items-baseline gap-1.5">
         <span className="text-headline text-4xl tabular-nums">${p.price}</span>
