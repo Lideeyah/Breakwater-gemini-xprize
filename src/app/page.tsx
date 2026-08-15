@@ -57,18 +57,18 @@ export default function Landing() {
           className="reveal-in mt-9 flex items-center justify-center gap-3"
           style={{ animationDelay: "240ms" }}
         >
-          <a
-            href="#watch"
+          <Link
+            href="/connect"
             className="rounded-md bg-accent/20 border border-border-strong px-5 py-2.5 text-[14px] font-operational text-foreground transition-colors duration-100 hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-strong focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
-            Watch it happen
-          </a>
-          <Link
-            href="/dashboard"
+            Connect your agent →
+          </Link>
+          <a
+            href="#watch"
             className="rounded-md px-5 py-2.5 text-[14px] font-operational text-secondary transition-colors duration-100 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-strong focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
-            Live dashboard →
-          </Link>
+            Watch it work
+          </a>
         </div>
       </section>
 
