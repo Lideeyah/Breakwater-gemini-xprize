@@ -19,6 +19,11 @@ const BASE =
 const OUT = join(__dirname, "recording");
 mkdirSync(OUT, { recursive: true });
 
+// A fresh agent id per run. Breakwater latches a runaway agent's breaker per
+// id, so reusing one id across recordings would make even the benign connect
+// test call trip. A new id each run keeps the demo a clean first-time setup.
+const AGENT = `invoice-processor-${String(Date.now()).slice(-3)}`;
+
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function main() {
@@ -50,7 +55,10 @@ async function main() {
   await page.evaluate(() => window.scrollTo({ top: 0, behavior: "smooth" }));
   await sleep(1400);
 
-  // --- Get started (brief visual, then jump to the app) ----------------------
+  // --- Get started: create the workspace, then CONNECT the agent -------------
+  // This is the whole point of Breakwater and it comes FIRST: you point your
+  // agent at the proxy with a one-line change. The film has to SHOW that
+  // integration before any functionality is demonstrated.
   await page.getByRole("link", { name: "Get started for free" }).first().click();
   await page.waitForURL("**/get-started");
   await sleep(900);
@@ -58,28 +66,26 @@ async function main() {
   await page.locator("#ws").pressSequentially("Northwind Labs", { delay: 55 });
   await sleep(350);
   await page.locator("#email").pressSequentially("ops@northwind.ai", { delay: 45 });
-  await sleep(800);
+  await sleep(700);
+  await page.getByRole("button", { name: /Create workspace/i }).click();
 
-  // Seed the workspace and go straight to the dashboard. The live "test call"
-  // step in onboarding is a cold-start-flaky round-trip right after a deploy and
-  // is not the point of the film; the dashboard is. This keeps the recording
-  // deterministic while still showing the sign-up screen.
-  await page.evaluate(() => {
-    const now = Date.now();
-    localStorage.setItem(
-      "breakwater.workspace",
-      JSON.stringify({
-        name: "Northwind Labs",
-        email: "ops@northwind.ai",
-        plan: "team",
-        agents: [
-          { id: "invoice-processor", name: "invoice-processor", createdAt: now },
-        ],
-        createdAt: now,
-      }),
-    );
-  });
-  await page.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
+  // Step 2 - Connect. Name the agent, then show the one-line integration
+  // (base_url -> the Breakwater proxy) across languages, then run the REAL test
+  // call through the proxy. "Go to my dashboard" only unlocks once it succeeds.
+  await page.locator("#agent").waitFor({ timeout: 15000 });
+  await page.locator("#agent").fill("");
+  await page.locator("#agent").pressSequentially(AGENT, { delay: 55 });
+  await sleep(1000);
+  for (const lang of ["Node", "cURL", "Python"]) {
+    await page.getByRole("button", { name: lang, exact: true }).click();
+    await sleep(1500);
+  }
+  await sleep(700);
+  await page.getByRole("button", { name: "Send a test call" }).click();
+  await page.getByText(/is protected/i).waitFor({ timeout: 45000 });
+  await sleep(1900);
+  await page.getByRole("button", { name: /Go to my dashboard/i }).click();
+  await page.waitForURL("**/dashboard");
   await sleep(2600);
 
   // --- Dashboard: real agent, real interception ------------------------------
@@ -100,7 +106,7 @@ async function main() {
     env: {
       ...process.env,
       PROXY_URL: process.env.AGENT_PROXY_URL || BASE,
-      AGENT_ID: "invoice-processor",
+      AGENT_ID: AGENT,
     },
     stdio: "inherit",
   });
